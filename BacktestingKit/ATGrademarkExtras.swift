@@ -92,7 +92,7 @@ private struct OptimizationIterationOutput {
     var numTrades: Int
 }
 
-private func optimizationIteration<ParameterT: Codable & Equatable>(
+private func optimizationIteration(
     strategy: ATStrategy,
     parameters: [ParameterDef],
     objectiveFn: ObjectiveFn,
@@ -147,13 +147,19 @@ private func extractParameterValues<ParameterT: Codable & Equatable>(
     for (idx, param) in parameters.enumerated() where idx < coordinates.count {
         dict[param.name] = coordinates[idx]
     }
+    if let casted = dict as? ParameterT {
+        return casted
+    }
     // Best-effort decode into ParameterT.
     let data = try? JSONSerialization.data(withJSONObject: dict, options: [])
     if let data, let decoded = try? JSONDecoder().decode(ParameterT.self, from: data) {
         return decoded
     }
-    // Fallback to empty object if decoding fails.
-    return try! JSONDecoder().decode(ParameterT.self, from: Data("{}".utf8))
+    let emptyObject = "{}".data(using: .utf8) ?? Data()
+    if let decoded = try? JSONDecoder().decode(ParameterT.self, from: emptyObject) {
+        return decoded
+    }
+    preconditionFailure("Unsupported optimization parameter type \(ParameterT.self). Expected a Codable object or [String: Double].")
 }
 
 private func packageIterationResult<ParameterT: Codable & Equatable>(
@@ -315,7 +321,7 @@ public struct WalkForwardOptimizationResult: Codable, Equatable {
     public var trades: [ATTrade]
 }
 
-public func walkForwardOptimize<ParameterT: Codable & Equatable>(
+public func walkForwardOptimize(
     strategy: ATStrategy,
     parameters: [ParameterDef],
     objectiveFn: ObjectiveFn,
@@ -340,7 +346,7 @@ public func walkForwardOptimize<ParameterT: Codable & Equatable>(
         if outSample.count < outSampleSize { break }
 
         opts.randomSeed = random.getReal()
-        let optimizeResult: OptimizationResult<ParameterT> = optimize(
+        let optimizeResult: OptimizationResult<[String: Double]> = optimize(
             strategy: strategy,
             parameters: parameters,
             objectiveFn: objectiveFn,
@@ -349,12 +355,9 @@ public func walkForwardOptimize<ParameterT: Codable & Equatable>(
         )
 
         var strategyClone = strategy
-        if let data = try? JSONEncoder().encode(optimizeResult.bestParameterValues),
-           let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Double] {
-            var merged = strategyClone.parameters
-            dict.forEach { merged[$0.key] = $0.value }
-            strategyClone.parameters = merged
-        }
+        var merged = strategyClone.parameters
+        optimizeResult.bestParameterValues.forEach { merged[$0.key] = $0.value }
+        strategyClone.parameters = merged
 
         let outSampleTrades = backtest(strategy: strategyClone, inputSeries: outSample).trades
         trades.append(contentsOf: outSampleTrades)
@@ -416,4 +419,3 @@ public final class Random {
         return min(max(value, 0), 1)
     }
 }
-

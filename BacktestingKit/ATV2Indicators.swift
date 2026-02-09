@@ -8,14 +8,14 @@ public func v2setTechnicalIndicators(
     var series = inputSeries
     var maxDays = 0
     for rule in entryRules {
-        let (updated, max) = v2bakeIndicators(series, rule: rule)
+        let (updated, ruleMaxDays) = v2bakeIndicators(series, rule: rule)
         series = updated
-        maxDays = max(maxDays, max)
+        maxDays = Swift.max(maxDays, ruleMaxDays)
     }
     for rule in exitRules {
-        let (updated, max) = v2bakeIndicators(series, rule: rule)
+        let (updated, ruleMaxDays) = v2bakeIndicators(series, rule: rule)
         series = updated
-        maxDays = max(maxDays, max)
+        maxDays = Swift.max(maxDays, ruleMaxDays)
     }
     if maxDays > 0, series.count > maxDays {
         series = Array(series.dropFirst(maxDays))

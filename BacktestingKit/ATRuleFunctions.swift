@@ -67,7 +67,7 @@ private func evaluateRules(_ rules: [ATV3_SimulationRule], args: ATRuleParams) -
     return result
 }
 
-private func resolveValue(type: TechnicalIndicators, name: String, figureOne: Double, bar: ATBar) -> Double? {
+func resolveValue(type: TechnicalIndicators, name: String, figureOne: Double, bar: ATBar) -> Double? {
     switch type {
     case .constant:
         return figureOne

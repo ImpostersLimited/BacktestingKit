@@ -48,7 +48,7 @@ public struct DFSeries<Index, Value> {
     }
 
     public func toPairs() -> [(Index, Value)] {
-        return Array(zip(indices, values))
+        return Array(Swift.zip(indices, values))
     }
 
     public func map<U>(_ transform: (Value) -> U) -> DFSeries<Index, U> {
@@ -86,7 +86,7 @@ public struct DFSeries<Index, Value> {
     }
 
     public func zip<OtherValue, U>(_ other: DFSeries<Index, OtherValue>, _ zipper: (Value, OtherValue) -> U) -> DFSeries<Index, U> {
-        let count = min(values.count, other.values.count)
+        let count = Swift.min(values.count, other.values.count)
         let newIndices = Array(indices.prefix(count))
         let newValues = (0..<count).map { zipper(values[$0], other.values[$0]) }
         return DFSeries<Index, U>(indices: newIndices, values: newValues)
@@ -94,12 +94,12 @@ public struct DFSeries<Index, Value> {
 
     public func zipAligned<OtherValue, U>(_ other: DFSeries<Index, OtherValue>, _ zipper: (Value, OtherValue) -> U) -> DFSeries<Index, U> where Index: Hashable {
         var otherMap: [Index: OtherValue] = [:]
-        for (idx, value) in zip(other.indices, other.values) {
+        for (idx, value) in Swift.zip(other.indices, other.values) {
             otherMap[idx] = value
         }
         var outIndices: [Index] = []
         var outValues: [U] = []
-        for (idx, value) in zip(indices, values) {
+        for (idx, value) in Swift.zip(indices, values) {
             if let otherValue = otherMap[idx] {
                 outIndices.append(idx)
                 outValues.append(zipper(value, otherValue))
@@ -120,7 +120,7 @@ public struct DFSeries<Index, Value> {
     }
 
     public func sortByIndex(ascending: Bool = true) -> DFSeries<Index, Value> where Index: Comparable {
-        let pairs = zip(indices, values).sorted { ascending ? $0.0 < $1.0 : $0.0 > $1.0 }
+        let pairs = Swift.zip(indices, values).sorted { ascending ? $0.0 < $1.0 : $0.0 > $1.0 }
         return DFSeries(pairs: pairs)
     }
 
@@ -184,11 +184,11 @@ extension DFSeries where Value == Double {
             let changes = DFSeries(indices: window.indices, values: window.values).amountChange(2).values
             let averageLoss = abs(changes.map { $0 < 0 ? $0 : 0 }.reduce(0, +) / Double(period))
             if averageLoss < Double.ulpOfOne {
-                return 100
+                return 100.0
             }
             let averageGain = changes.map { $0 > 0 ? $0 : 0 }.reduce(0, +) / Double(period)
             let relativeStrength = averageGain / averageLoss
-            return 100 - (100 / (1 + relativeStrength))
+            return 100.0 - (100.0 / (1.0 + relativeStrength))
         }
         return DFSeries(indices: windows.indices, values: values)
     }
@@ -202,8 +202,8 @@ extension DFSeries where Value == Double {
             let std = series.std()
             let row = DFBollingerRow(
                 value: series.last(),
-                middle: avg,
                 upper: avg + (std * stdDevMultUpper),
+                middle: avg,
                 lower: avg - (std * stdDevMultLower),
                 stddev: std
             )
@@ -219,7 +219,7 @@ extension DFSeries where Value == Double {
         let signal = macd.ema(signalPeriod)
         let histogram = macd.skip(signalPeriod - 1).zip(signal) { $0 - $1 }
 
-        let merged = DFDataFrame.merge([
+        let merged = DFDataFrame<Index, [String: Double]>.merge([
             shortEma.inflate { ["shortEMA": $0] },
             longEma.inflate { ["longEMA": $0] },
             macd.inflate { ["macd": $0] },
@@ -288,13 +288,13 @@ public struct DFDataFrame<Index, Row> {
     }
 
     public func sortByIndex(ascending: Bool = true) -> DFDataFrame<Index, Row> where Index: Comparable {
-        let pairs = zip(indices, rows).sorted { ascending ? $0.0 < $1.0 : $0.0 > $1.0 }
+        let pairs = Swift.zip(indices, rows).sorted { ascending ? $0.0 < $1.0 : $0.0 > $1.0 }
         return DFDataFrame(indices: pairs.map { $0.0 }, rows: pairs.map { $0.1 })
     }
 
     public func reindex(_ newIndices: [Index]) -> DFDataFrame<Index, Row?> where Index: Hashable {
         var map: [Index: Row] = [:]
-        for (idx, row) in zip(indices, rows) {
+        for (idx, row) in Swift.zip(indices, rows) {
             map[idx] = row
         }
         let newRows = newIndices.map { map[$0] }
@@ -314,7 +314,7 @@ public struct DFDataFrame<Index, Row> {
     }
 }
 
-public struct DFIndex<Value: Comparable>: Comparable, Codable {
+public struct DFIndex<Value: Comparable & Codable>: Comparable, Codable {
     public var value: Value
     public init(_ value: Value) {
         self.value = value
@@ -336,14 +336,14 @@ public enum DFWhichIndex: String, Codable {
 
 extension DFSeries {
     public func selectPairs<U>(_ transform: (Index, Value) -> U) -> DFSeries<Index, U> {
-        let newValues = zip(indices, values).map { transform($0.0, $0.1) }
+        let newValues = Swift.zip(indices, values).map { transform($0.0, $0.1) }
         return DFSeries<Index, U>(indices: indices, values: newValues)
     }
 
     public func filter(_ predicate: (Value) -> Bool) -> DFSeries<Index, Value> {
         var outIndices: [Index] = []
         var outValues: [Value] = []
-        for (idx, val) in zip(indices, values) {
+        for (idx, val) in Swift.zip(indices, values) {
             if predicate(val) {
                 outIndices.append(idx)
                 outValues.append(val)
@@ -354,7 +354,7 @@ extension DFSeries {
 
     public func groupBy<Key: Hashable>(_ keySelector: (Value) -> Key) -> [Key: DFSeries<Index, Value>] {
         var groups: [Key: [(Index, Value)]] = [:]
-        for (idx, val) in zip(indices, values) {
+        for (idx, val) in Swift.zip(indices, values) {
             let key = keySelector(val)
             groups[key, default: []].append((idx, val))
         }
@@ -364,12 +364,12 @@ extension DFSeries {
 
 extension DFDataFrame {
     public func toPairs() -> [DFPair<Index, Row>] {
-        return zip(indices, rows).map { DFPair(index: $0.0, value: $0.1) }
+        return Swift.zip(indices, rows).map { DFPair(index: $0.0, value: $0.1) }
     }
 
     public func groupBy<Key: Hashable>(_ keySelector: (Row) -> Key) -> [Key: DFDataFrame<Index, Row>] {
         var groups: [Key: [(Index, Row)]] = [:]
-        for (idx, row) in zip(indices, rows) {
+        for (idx, row) in Swift.zip(indices, rows) {
             let key = keySelector(row)
             groups[key, default: []].append((idx, row))
         }
@@ -389,7 +389,7 @@ extension DFDataFrame where Row == [String: Double] {
         var mergedRows: [[String: Double]] = Array(repeating: [:], count: first.rows.count)
         mergedRows.indices.forEach { mergedRows[$0].reserveCapacity(8) }
         for frame in frames {
-            let count = min(frame.rows.count, mergedRows.count)
+            let count = Swift.min(frame.rows.count, mergedRows.count)
             for i in 0..<count {
                 mergedRows[i].merge(frame.rows[i]) { _, new in new }
             }
@@ -403,7 +403,7 @@ extension DFDataFrame where Row == [String: Double] {
         }
         var rowMap: [Index: [String: Double]] = [:]
         for frame in frames {
-            for (idx, row) in zip(frame.indices, frame.rows) {
+            for (idx, row) in Swift.zip(frame.indices, frame.rows) {
                 var merged = rowMap[idx] ?? [:]
                 merged.merge(row) { _, new in new }
                 rowMap[idx] = merged
@@ -445,13 +445,15 @@ extension DFSeries {
 }
 
 extension DFDataFrame where Row == ATBar {
-    public func withSeries(_ name: String, _ series: DFSeries<Index, Double>) -> DFDataFrame<Index, ATBar> {
-        let count = min(rows.count, series.values.count)
+    public func withSeries(_ name: String, _ series: DFSeries<Index, Double>) -> DFDataFrame<Index, ATBar> where Index: Hashable {
+        let seriesMap = Dictionary(uniqueKeysWithValues: Swift.zip(series.indices, series.values))
         var newRows = rows
-        for i in 0..<count {
-            var bar = newRows[i]
-            bar.indicators[name] = series.values[i]
-            newRows[i] = bar
+        for (idx, rowIndex) in indices.enumerated() {
+            if let value = seriesMap[rowIndex] {
+                var bar = newRows[idx]
+                bar.indicators[name] = value
+                newRows[idx] = bar
+            }
         }
         return DFDataFrame(indices: indices, rows: newRows)
     }
@@ -477,7 +479,7 @@ extension DFDataFrame where Row == ATBar {
     public func stochasticFast(_ k: Int, _ d: Int) -> DFDataFrame<Index, [String: Double]> {
         let fastK = stochasticK(k).bake()
         let fastD = fastK.sma(d)
-        return DFDataFrame.merge([
+        return DFDataFrame<Index, [String: Double]>.merge([
             fastK.inflate { ["percentK": $0] },
             fastD.inflate { ["percentD": $0] }
         ])
@@ -488,7 +490,7 @@ extension DFDataFrame where Row == ATBar {
         let fastD = fastK.sma(d)
         let slowK = fastK.sma(smooth)
         let slowD = fastD.sma(smooth)
-        return DFDataFrame.merge([
+        return DFDataFrame<Index, [String: Double]>.merge([
             slowK.inflate { ["percentK": $0] },
             slowD.inflate { ["percentD": $0] }
         ])
@@ -514,12 +516,12 @@ extension DFDataFrame {
         merge: (Row, OtherRow?) -> OutputRow
     ) -> DFDataFrame<Index, OutputRow> where Index: Hashable {
         var otherMap: [Index: OtherRow] = [:]
-        for (idx, row) in zip(other.indices, other.rows) {
+        for (idx, row) in Swift.zip(other.indices, other.rows) {
             otherMap[idx] = row
         }
         var outIndices: [Index] = []
         var outRows: [OutputRow] = []
-        for (idx, row) in zip(indices, rows) {
+        for (idx, row) in Swift.zip(indices, rows) {
             let right = otherMap[idx]
             if how == .inner && right == nil {
                 continue

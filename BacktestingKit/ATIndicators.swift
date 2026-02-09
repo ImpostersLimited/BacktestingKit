@@ -9,14 +9,14 @@ public func v3setTechnicalIndicators(
     var maxDays = 0
     var seriesCache: [String: DFSeries<Int, Double>] = [:]
     for rule in entryRules {
-        let (updated, max) = v3bakeIndicators(dataFrame, rule: rule, seriesCache: &seriesCache)
+        let (updated, ruleMaxDays) = v3bakeIndicators(dataFrame, rule: rule, seriesCache: &seriesCache)
         dataFrame = updated
-        maxDays = max(maxDays, max)
+        maxDays = Swift.max(maxDays, ruleMaxDays)
     }
     for rule in exitRules {
-        let (updated, max) = v3bakeIndicators(dataFrame, rule: rule, seriesCache: &seriesCache)
+        let (updated, ruleMaxDays) = v3bakeIndicators(dataFrame, rule: rule, seriesCache: &seriesCache)
         dataFrame = updated
-        maxDays = max(maxDays, max)
+        maxDays = Swift.max(maxDays, ruleMaxDays)
     }
     var series = dataFrame.rows
     if maxDays > 0, series.count > maxDays {

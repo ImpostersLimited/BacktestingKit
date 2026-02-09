@@ -32,7 +32,7 @@ public enum StrategyOperand: Hashable, Identifiable, Equatable, Codable, CustomS
         switch self {
         case .indicator(let ti): return ti.id ^ 0x2000
         case .price(let pt): return pt.id ^ 0x2100
-        case .constant(let d): return Int(bitPattern: d.bitPattern)
+        case .constant(let d): return Int(truncatingIfNeeded: d.bitPattern)
         }
     }
     public var description: String {
@@ -97,7 +97,7 @@ public struct StrategyCondition: Hashable, Identifiable, Equatable, Codable {
     public var id: Int { lhs.id ^ op.id ^ rhs.id }
 }
 
-public struct TechnicalIndicatorValueProvider: Hashable, Identifiable, Equatable, Codable {
+public struct TechnicalIndicatorValueProvider: Identifiable, Equatable, Codable {
     public let index: Int
     public let candles: [Candlestick]
     public let indicatorNameMap: [TechnicalIndicator: String]
@@ -641,7 +641,10 @@ public class BacktestingKitManager {
         entryConditions: [StrategyCondition],
         exitConditions: [StrategyCondition]
     ) -> BacktestResult {
-        let indicatorNameMap = Dictionary(uniqueKeysWithValues: indicators)
+        var indicatorNameMap: [TechnicalIndicator: String] = [:]
+        for (name, indicator) in indicators {
+            indicatorNameMap[indicator] = name
+        }
         var enriched = candles
         // Compute all requested indicators for all candles
         for (name, indicator) in indicators {
@@ -678,14 +681,12 @@ public class BacktestingKitManager {
             uuid: "",
             indicators: indicators.map { $0.indicator },
             entrySignal: { prev, curr in
-                let prevProvider = TechnicalIndicatorValueProvider(index: prev.index, candles: prev.candles, indicatorNameMap: indicatorNameMap)
                 let currProvider = TechnicalIndicatorValueProvider(index: curr.index, candles: curr.candles, indicatorNameMap: indicatorNameMap)
-                return entryConditions.allSatisfy { eval($0, prev: prevProvider, curr: currProvider) }
+                return entryConditions.allSatisfy { eval($0, curr: currProvider) }
             },
             exitSignal: { prev, curr, entry in
-                let prevProvider = TechnicalIndicatorValueProvider(index: prev.index, candles: prev.candles, indicatorNameMap: indicatorNameMap)
                 let currProvider = TechnicalIndicatorValueProvider(index: curr.index, candles: curr.candles, indicatorNameMap: indicatorNameMap)
-                return exitConditions.allSatisfy { eval($0, prev: prevProvider, curr: currProvider) }
+                return exitConditions.allSatisfy { eval($0, curr: currProvider) }
             }
         )
     }

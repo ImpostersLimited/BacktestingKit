@@ -1,0 +1,78 @@
+{
+  "extras" : {
+    "drawdownTail" : [
+      -4712.509417455178,
+      0,
+      0,
+      0,
+      0
+    ],
+    "equityTail" : [
+      995287.4905825448,
+      1054022.7656855036,
+      1077315.011287917,
+      1142387.7678002045,
+      1184766.8778108764
+    ]
+  },
+  "v2" : {
+    "analysis" : {
+      "ATMaxDownDraw" : 0.43098400000000936,
+      "ATMaxDownDrawPct" : 0.41686154780887824,
+      "finalCapital" : 1184766.8778108764,
+      "growth" : 1.1847668778108764,
+      "maxDrawdown" : -4712.509417455178,
+      "maxDrawdownPct" : -0.47125094174551774,
+      "profit" : 184766.87781087635,
+      "totalTrades" : 5
+    },
+    "firstTrade" : {
+      "entryPrice" : 103.387804,
+      "exitPrice" : 102.900588,
+      "exitReason" : "exit-rule",
+      "holdingPeriod" : 5,
+      "profit" : -0.48721600000000365
+    },
+    "lastTrade" : {
+      "entryPrice" : 103.782717,
+      "exitPrice" : 107.63274,
+      "exitReason" : "finalize",
+      "holdingPeriod" : 25,
+      "profit" : 3.850022999999993
+    },
+    "maxDays" : 8,
+    "seriesCount" : 212,
+    "status" : "Position",
+    "tradeCount" : 5
+  },
+  "v3" : {
+    "analysis" : {
+      "ATMaxDownDraw" : 0.43098400000000936,
+      "ATMaxDownDrawPct" : 0.41686154780887824,
+      "finalCapital" : 1184766.8778108764,
+      "growth" : 1.1847668778108764,
+      "maxDrawdown" : -4712.509417455178,
+      "maxDrawdownPct" : -0.47125094174551774,
+      "profit" : 184766.87781087635,
+      "totalTrades" : 5
+    },
+    "firstTrade" : {
+      "entryPrice" : 103.387804,
+      "exitPrice" : 102.900588,
+      "exitReason" : "exit-rule",
+      "holdingPeriod" : 5,
+      "profit" : -0.48721600000000365
+    },
+    "lastTrade" : {
+      "entryPrice" : 103.782717,
+      "exitPrice" : 107.63274,
+      "exitReason" : "finalize",
+      "holdingPeriod" : 25,
+      "profit" : 3.850022999999993
+    },
+    "maxDays" : 8,
+    "seriesCount" : 212,
+    "status" : "Position",
+    "tradeCount" : 5
+  }
+}

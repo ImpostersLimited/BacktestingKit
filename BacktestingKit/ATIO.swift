@@ -1,5 +1,47 @@
 import Foundation
 
+public enum AlphaVantageClientError: LocalizedError, Equatable {
+    case invalidTicker
+    case invalidURL
+    case invalidHTTPResponse
+    case badStatusCode(Int)
+    case cannotDecodeCSV
+    case throttled(String)
+    case apiError(String)
+    case emptyResponse
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidTicker:
+            return "Ticker must not be empty."
+        case .invalidURL:
+            return "Failed to construct AlphaVantage URL."
+        case .invalidHTTPResponse:
+            return "Unexpected HTTP response from AlphaVantage."
+        case .badStatusCode(let code):
+            return "AlphaVantage returned HTTP status \(code)."
+        case .cannotDecodeCSV:
+            return "Failed to decode CSV payload from AlphaVantage."
+        case .throttled(let message):
+            return "AlphaVantage throttled the request: \(message)"
+        case .apiError(let message):
+            return "AlphaVantage returned an API error: \(message)"
+        case .emptyResponse:
+            return "AlphaVantage returned an empty response."
+        }
+    }
+}
+
+public struct AlphaVantageRetryPolicy: Equatable, Sendable {
+    public var maxAttempts: Int
+    public var initialBackoffSeconds: Double
+
+    public init(maxAttempts: Int = 3, initialBackoffSeconds: Double = 1.0) {
+        self.maxAttempts = max(1, maxAttempts)
+        self.initialBackoffSeconds = max(0.1, initialBackoffSeconds)
+    }
+}
+
 public protocol ATV3DataStore {
     func getConfigs(instrumentID: String) async throws -> [ATV3_Config]
     func getSimulationRules(configID: String, ruleType: String) async throws -> [ATV3_SimulationRule]
@@ -17,40 +59,112 @@ public protocol ATRawCsvProvider {
 public struct AlphaVantageClient: ATRawCsvProvider {
     public var apiKey: String
     public var session: URLSession
+    public var retryPolicy: AlphaVantageRetryPolicy
 
-    public init(apiKey: String, session: URLSession = .shared) {
+    public init(
+        apiKey: String,
+        session: URLSession = .shared,
+        retryPolicy: AlphaVantageRetryPolicy = AlphaVantageRetryPolicy()
+    ) {
         self.apiKey = apiKey
         self.session = session
+        self.retryPolicy = retryPolicy
     }
 
     public func getRawCsv(ticker: String, p1: Double = 0, p2: Double = 0) async throws -> String {
+        let normalizedTicker = ticker.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedTicker.isEmpty else {
+            throw AlphaVantageClientError.invalidTicker
+        }
         var components = URLComponents(string: "https://www.alphavantage.co/query")!
         components.queryItems = [
             URLQueryItem(name: "function", value: "TIME_SERIES_DAILY_ADJUSTED"),
-            URLQueryItem(name: "symbol", value: ticker),
+            URLQueryItem(name: "symbol", value: normalizedTicker),
             URLQueryItem(name: "outputsize", value: "full"),
             URLQueryItem(name: "apikey", value: apiKey),
             URLQueryItem(name: "datatype", value: "csv"),
             URLQueryItem(name: "entitlement", value: "delayed"),
         ]
-        let request = URLRequest(url: components.url!)
-        let (data, _) = try await session.data(for: request)
-        guard let csv = String(data: data, encoding: .utf8) else {
-            throw URLError(.cannotDecodeContentData)
+        guard let url = components.url else {
+            throw AlphaVantageClientError.invalidURL
         }
-        return csv
+        let request = URLRequest(url: url)
+        let data = try await requestDataWithRetry(request)
+        guard let payload = String(data: data, encoding: .utf8) else {
+            throw AlphaVantageClientError.cannotDecodeCSV
+        }
+        let trimmed = payload.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw AlphaVantageClientError.emptyResponse
+        }
+        if let apiError = detectAlphaVantageError(from: trimmed) {
+            throw apiError
+        }
+        return payload
     }
 
     public func getInstrumentDetail(ticker: String) async throws -> ATV3_InstrumentDetail {
+        let normalizedTicker = ticker.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedTicker.isEmpty else {
+            throw AlphaVantageClientError.invalidTicker
+        }
         var components = URLComponents(string: "https://www.alphavantage.co/query")!
         components.queryItems = [
             URLQueryItem(name: "function", value: "OVERVIEW"),
-            URLQueryItem(name: "symbol", value: ticker),
+            URLQueryItem(name: "symbol", value: normalizedTicker),
             URLQueryItem(name: "apikey", value: apiKey),
         ]
-        let request = URLRequest(url: components.url!)
-        let (data, _) = try await session.data(for: request)
+        guard let url = components.url else {
+            throw AlphaVantageClientError.invalidURL
+        }
+        let request = URLRequest(url: url)
+        let data = try await requestDataWithRetry(request)
+        if let text = String(data: data, encoding: .utf8),
+           let apiError = detectAlphaVantageError(from: text) {
+            throw apiError
+        }
         return try JSONDecoder().decode(ATV3_InstrumentDetail.self, from: data)
+    }
+
+    private func requestDataWithRetry(_ request: URLRequest) async throws -> Data {
+        var attempt = 1
+        var currentBackoff = retryPolicy.initialBackoffSeconds
+        var lastError: Error?
+
+        while attempt <= retryPolicy.maxAttempts {
+            do {
+                let (data, response) = try await session.data(for: request)
+                guard let http = response as? HTTPURLResponse else {
+                    throw AlphaVantageClientError.invalidHTTPResponse
+                }
+                guard (200..<300).contains(http.statusCode) else {
+                    throw AlphaVantageClientError.badStatusCode(http.statusCode)
+                }
+                return data
+            } catch {
+                lastError = error
+                let isLastAttempt = attempt == retryPolicy.maxAttempts
+                if isLastAttempt {
+                    break
+                }
+                try await Task.sleep(nanoseconds: UInt64(currentBackoff * 1_000_000_000))
+                currentBackoff *= 2
+                attempt += 1
+            }
+        }
+
+        throw lastError ?? AlphaVantageClientError.emptyResponse
+    }
+
+    private func detectAlphaVantageError(from payload: String) -> AlphaVantageClientError? {
+        let lowercased = payload.lowercased()
+        if lowercased.contains("\"note\"") || lowercased.contains("api call frequency") {
+            return .throttled(payload)
+        }
+        if lowercased.contains("\"error message\"") || lowercased.contains("\"information\"") {
+            return .apiError(payload)
+        }
+        return nil
     }
 }
 

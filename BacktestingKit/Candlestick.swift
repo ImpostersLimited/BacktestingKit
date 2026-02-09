@@ -3,7 +3,7 @@
 
 import Foundation
 
-public struct Candlestick {
+public struct Candlestick: Equatable, Codable {
     public let date: Date
     public let open: Double
     public let high: Double
