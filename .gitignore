@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# SwiftPM / Xcode build artifacts
+.build/
+DerivedData/
+
+# Xcode user state
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Local virtual environments
+.venv/
+
+# Temporary artifacts
+*.tmp
+*.log
+
+# Parity runner artifacts
+tools/parity/js_output.json
+tools/parity/swift_output.json
+tools/parity/swift_runner_bin

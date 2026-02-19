@@ -1,0 +1,54 @@
+@Tutorial(time: 15) {
+    @Intro(title: "Run Your First Backtest") {
+        Execute an offline, deterministic backtest using bundled CSV data and inspect core metrics.
+    }
+
+    @Section(title: "Use the canonical demo entrypoint") {
+        @ContentAndMedia {
+            The fastest smoke test is ``BKEngine/runDemo(dataset:csv:log:)``.
+
+            It uses bundled historical CSV resources, so no API key is required.
+        }
+
+        @Steps {
+            @Step {
+                Import the module:
+
+                ```swift
+                import BacktestingKit
+                ```
+            }
+
+            @Step {
+                Run the demo:
+
+                ```swift
+                let summary = try BKEngine.runDemo(dataset: .aapl) { line in
+                    print(line)
+                }
+                ```
+            }
+
+            @Step {
+                Read the output:
+
+                ```swift
+                print(summary.symbol)
+                print(summary.barCount)
+                print(summary.result.totalReturn)
+                print(summary.result.maxDrawdown)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Inspect detailed metrics") {
+        @ContentAndMedia {
+            ``BacktestResult`` contains trade and risk/return metrics including:
+
+            - total return and annualized return
+            - drawdown, Sharpe, Sortino, Calmar
+            - win/loss breakdown and expectancy
+        }
+    }
+}

@@ -128,7 +128,7 @@ func decodeModel<T: Decodable>(_ raw: Any) -> T {
     }
 }
 
-func summarizeAnalysis(_ analysis: ATAnalysis) -> AnalysisSummary {
+func summarizeAnalysis(_ analysis: BKAnalysis) -> AnalysisSummary {
     AnalysisSummary(
         finalCapital: analysis.finalCapital,
         profit: analysis.profit,
@@ -136,12 +136,12 @@ func summarizeAnalysis(_ analysis: ATAnalysis) -> AnalysisSummary {
         totalTrades: Double(analysis.totalTrades),
         maxDrawdown: analysis.maxDrawdown,
         maxDrawdownPct: analysis.maxDrawdownPct,
-        ATMaxDownDraw: analysis.ATMaxDownDraw,
-        ATMaxDownDrawPct: analysis.ATMaxDownDrawPct
+        ATMaxDownDraw: analysis.BKMaxDownDraw,
+        ATMaxDownDrawPct: analysis.BKMaxDownDrawPct
     )
 }
 
-func summarizeV2Analysis(_ analysis: ATV2.ATAnalysis) -> AnalysisSummary {
+func summarizeV2Analysis(_ analysis: BKV2.BKAnalysis) -> AnalysisSummary {
     AnalysisSummary(
         finalCapital: analysis.finalCapital,
         profit: analysis.profit,
@@ -149,12 +149,12 @@ func summarizeV2Analysis(_ analysis: ATV2.ATAnalysis) -> AnalysisSummary {
         totalTrades: analysis.totalTrades,
         maxDrawdown: analysis.maxDrawdown,
         maxDrawdownPct: analysis.maxDrawdownPct,
-        ATMaxDownDraw: analysis.ATMaxDownDraw,
-        ATMaxDownDrawPct: analysis.ATMaxDownDrawPct
+        ATMaxDownDraw: analysis.BKMaxDownDraw,
+        ATMaxDownDrawPct: analysis.BKMaxDownDrawPct
     )
 }
 
-func summarizeV2Trade(_ trade: ATV2.ATTrade?) -> TradeSummary? {
+func summarizeV2Trade(_ trade: BKV2.BKTrade?) -> TradeSummary? {
     guard let trade else { return nil }
     return TradeSummary(
         entryPrice: trade.entryPrice,
@@ -165,7 +165,7 @@ func summarizeV2Trade(_ trade: ATV2.ATTrade?) -> TradeSummary? {
     )
 }
 
-func summarizeTrade(_ trade: ATTrade?) -> TradeSummary? {
+func summarizeTrade(_ trade: BKTrade?) -> TradeSummary? {
     guard let trade else { return nil }
     return TradeSummary(
         entryPrice: trade.entryPrice,
@@ -176,7 +176,10 @@ func summarizeTrade(_ trade: ATTrade?) -> TradeSummary? {
     )
 }
 
-let fixturePath = "/Users/fung/Programming/backtestingKing-agent/tools/parity/fixture.json"
+let fixturePath = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .appendingPathComponent("fixture.json")
+    .path
 let fixtureData: Data
 do {
     fixtureData = try Data(contentsOf: URL(fileURLWithPath: fixturePath))
@@ -194,7 +197,7 @@ do {
 
 let iso = ISO8601DateFormatter()
 let bars = fixture.bars.map { row in
-    ATBar(
+    BKBar(
         time: iso.date(from: row.time) ?? Date(timeIntervalSince1970: 0),
         open: row.open,
         high: row.high,
@@ -226,8 +229,8 @@ let rawV2ExitRules: [[String: Any]] = fixture.v2.exitRules.map { rule in
         "indicatorTwoFigure": rule.indicatorTwoFigure.map { Int($0) }
     ]
 }
-let v2EntryRules: [ATV2.SimulationRule] = rawV2EntryRules.map(decodeModel)
-let v2ExitRules: [ATV2.SimulationRule] = rawV2ExitRules.map(decodeModel)
+let v2EntryRules: [BKV2.SimulationRule] = rawV2EntryRules.map(decodeModel)
+let v2ExitRules: [BKV2.SimulationRule] = rawV2ExitRules.map(decodeModel)
 
 let rawV2Config: [String: Any] = [
     "policy": fixture.v2.config.policy,
@@ -239,7 +242,7 @@ let rawV2Config: [String: Any] = [
     "t1": fixture.v2.config.t1,
     "t2": fixture.v2.config.t2
 ]
-let v2Config: ATV2.SimulationPolicyConfig = decodeModel(rawV2Config)
+let v2Config: BKV2.SimulationPolicyConfig = decodeModel(rawV2Config)
 
 let (v2Series, v2MaxDays) = v2setTechnicalIndicators(bars, entryRules: v2EntryRules, exitRules: v2ExitRules)
 let (v2Output, v2Status) = v2simulateConfig(ticker: "TEST", config: v2Config, entryRules: v2EntryRules, exitRules: v2ExitRules, rawBars: bars)
@@ -257,9 +260,9 @@ let rawV3Config: [String: Any] = [
     "t2": fixture.v3.config.t2,
     "instrument_id": "TEST"
 ]
-let v3Config: ATV3_Config = decodeModel(rawV3Config)
+let v3Config: BKV3_Config = decodeModel(rawV3Config)
 
-let v3EntryRules: [ATV3_SimulationRule] = fixture.v3.entryRules.map { rule in
+let v3EntryRules: [BKV3_SimulationRule] = fixture.v3.entryRules.map { rule in
     let raw: [String: Any] = [
         "id": rule.id,
         "indicator_one_name": rule.indicator_one_name,
@@ -280,7 +283,7 @@ let v3EntryRules: [ATV3_SimulationRule] = fixture.v3.entryRules.map { rule in
     return decodeModel(raw)
 }
 
-let v3ExitRules: [ATV3_SimulationRule] = fixture.v3.exitRules.map { rule in
+let v3ExitRules: [BKV3_SimulationRule] = fixture.v3.exitRules.map { rule in
     let raw: [String: Any] = [
         "id": rule.id,
         "indicator_one_name": rule.indicator_one_name,

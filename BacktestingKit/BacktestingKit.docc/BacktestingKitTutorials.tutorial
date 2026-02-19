@@ -1,0 +1,10 @@
+@Tutorials(name: "BacktestingKit Tutorials") {
+    @Intro(title: "Build with BacktestingKit") {
+        Learn the canonical flows for running v3 and v2 simulations, plus offline demo validation.
+    }
+
+    @Chapter(name: "Core Flows") {
+        @TutorialReference(tutorial: "doc:BKFirstBacktestTutorial")
+        @TutorialReference(tutorial: "doc:BKV2V3OneLinerTutorial")
+    }
+}

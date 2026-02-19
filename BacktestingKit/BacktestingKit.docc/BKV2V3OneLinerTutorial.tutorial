@@ -1,0 +1,82 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Run v2 and v3 in One-Liner Flows") {
+        Use the canonical request objects to run simulation paths with explicit providers and options.
+    }
+
+    @Section(title: "Prepare dependencies") {
+        @ContentAndMedia {
+            Build request values with:
+
+            - instrument/config inputs
+            - a ``BKRawCsvProvider`` implementation
+            - execution options for parser behavior
+        }
+
+        @Steps {
+            @Step {
+                Define a provider:
+
+                ```swift
+                import BacktestingKit
+
+                struct MyProvider: BKRawCsvProvider {
+                    let csv: String
+
+                    func getRawCsv(ticker: String, p1: Double, p2: Double) async throws -> String {
+                        csv
+                    }
+                }
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run a v3 request") {
+        @Steps {
+            @Step {
+                Build a v3 request and run:
+
+                ```swift
+                let request = BKEngine.V3Request(
+                    instrument: instrument,
+                    p1: 5,
+                    p2: 20,
+                    executionOptions: .init(parserMode: .streamingStrict),
+                    dataStore: dataStore,
+                    csvProvider: MyProvider(csv: csv)
+                )
+
+                let v3Result = await BKEngine.runV3(request)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run a v2 request") {
+        @Steps {
+            @Step {
+                Build a v2 request and run:
+
+                ```swift
+                let request = BKEngine.V2Request(
+                    instrumentID: "AAPL",
+                    config: config,
+                    p1: 5,
+                    p2: 20,
+                    csvProvider: MyProvider(csv: csv)
+                )
+
+                let v2Result = await BKEngine.runV2(request)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Handle failures") {
+        @ContentAndMedia {
+            Always switch on `Result` and map parsing/network/simulation errors to UI-specific actions.
+
+            For batch flows, prefer ``BKSimulationDriver/simulateInstrumentsWithDetailedReport(_:p1:p2:dateFormat:batchOptions:executionOptions:progress:)`` to collect per-instrument failures.
+        }
+    }
+}

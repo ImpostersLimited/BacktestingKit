@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [debug, release]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build (Debug)
+        if: matrix.configuration == 'debug'
+        run: swift build
+
+      - name: Build (Release)
+        if: matrix.configuration == 'release'
+        run: swift build -c release
+
+      - name: Test
+        run: swift test
+
+      - name: Run parity (if local JS engine is available)
+        if: matrix.configuration == 'debug'
+        shell: bash
+        run: |
+          if [[ -f ../js-engine/algotrade3/models/src/ATTechnicalIndicators.ts || -f ../algotrade-js-trial/algotrade3/models/src/ATTechnicalIndicators.ts || -f js-engine/algotrade3/models/src/ATTechnicalIndicators.ts ]]; then
+            bash tools/parity/run_parity.sh
+          else
+            echo "Skipping parity: local JS engine checkout not found."
+          fi

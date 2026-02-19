@@ -3,21 +3,50 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-JS_ROOT="$(cd "$REPO_ROOT/../algotrade-js-trial" && pwd)"
+
+resolve_js_engine_root() {
+  local requested="${JS_ENGINE_ROOT:-}"
+  local candidates=(
+    "$requested"
+    "$REPO_ROOT/../js-engine"
+    "$REPO_ROOT/../algotrade-js-trial"
+    "$REPO_ROOT/js-engine"
+  )
+  for candidate in "${candidates[@]}"; do
+    if [[ -n "$candidate" && -f "$candidate/algotrade3/models/src/ATTechnicalIndicators.ts" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! JS_ROOT="$(resolve_js_engine_root)"; then
+  echo "Parity JS engine not found."
+  echo "Set JS_ENGINE_ROOT to a path containing algotrade3/models (for example a sibling js-engine checkout)."
+  exit 2
+fi
+export JS_ENGINE_ROOT="$JS_ROOT"
 
 JS_OUT="$SCRIPT_DIR/js_output.json"
 SWIFT_OUT="$SCRIPT_DIR/swift_output.json"
 SWIFT_BIN="$SCRIPT_DIR/swift_runner_bin"
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/backtestingkit-derived}"
+MODULE_CACHE_PATH="${MODULE_CACHE_PATH:-/tmp/backtestingkit-module-cache}"
+
+mkdir -p "$MODULE_CACHE_PATH"
+export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE_PATH"
 
 pushd "$REPO_ROOT" >/dev/null
-xcodebuild -scheme BacktestingKit -project BacktestingKit.xcodeproj -configuration Debug CODE_SIGNING_ALLOWED=NO build >/tmp/backtestingkit_parity_build.log
+xcodebuild -scheme BacktestingKit -project BacktestingKit.xcodeproj -configuration Debug -derivedDataPath "$DERIVED_DATA_PATH" CODE_SIGNING_ALLOWED=NO build >/tmp/backtestingkit_parity_build.log
 popd >/dev/null
 
 cd "$JS_ROOT"
-npx -y tsx "$SCRIPT_DIR/js_runner.ts" > "$JS_OUT"
+node "$SCRIPT_DIR/js_runner.ts" > "$JS_OUT"
 
-SWIFT_FRAMEWORK_DIR="/Users/fung/Library/Developer/Xcode/DerivedData/BacktestingKit-fphocypahkabhccfcjtlxooemiie/Build/Products/Debug"
+SWIFT_FRAMEWORK_DIR="$DERIVED_DATA_PATH/Build/Products/Debug"
 swiftc "$SCRIPT_DIR/swift_runner.swift" \
+  -module-cache-path "$MODULE_CACHE_PATH" \
   -I "$SWIFT_FRAMEWORK_DIR" \
   -F "$SWIFT_FRAMEWORK_DIR" \
   -L "$SWIFT_FRAMEWORK_DIR" \
