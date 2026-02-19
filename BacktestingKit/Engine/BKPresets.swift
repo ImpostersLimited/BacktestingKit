@@ -489,4 +489,3 @@ public func getSimulatePolicyConfig(preset: SimulationPolicy) -> SimulationPolic
         return macdEmaPreset()
     }
 }
-

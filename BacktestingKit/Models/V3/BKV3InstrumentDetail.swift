@@ -64,4 +64,3 @@ public struct BKV3_InstrumentDetail: Codable, Equatable {
         case _200DayMovingAverage = "200DayMovingAverage"
     }
 }
-
