@@ -63,4 +63,25 @@ public struct BKV3_InstrumentDetail: Codable, Equatable {
         case _50DayMovingAverage = "50DayMovingAverage"
         case _200DayMovingAverage = "200DayMovingAverage"
     }
+
+    public static func == (lhs: BKV3_InstrumentDetail, rhs: BKV3_InstrumentDetail) -> Bool {
+        if lhs.Symbol != rhs.Symbol || lhs.AssetType != rhs.AssetType || lhs.Name != rhs.Name || lhs.Description != rhs.Description || lhs.CIK != rhs.CIK || lhs.Exchange != rhs.Exchange || lhs.Currency != rhs.Currency || lhs.Country != rhs.Country || lhs.Sector != rhs.Sector || lhs.Industry != rhs.Industry {
+            return false
+        }
+        if lhs.Address != rhs.Address || lhs.OfficialSite != rhs.OfficialSite || lhs.FiscalYearEnd != rhs.FiscalYearEnd || lhs.LatestQuarter != rhs.LatestQuarter || lhs.MarketCapitalization != rhs.MarketCapitalization || lhs.EBITDA != rhs.EBITDA || lhs.PERatio != rhs.PERatio || lhs.PEGRatio != rhs.PEGRatio || lhs.BookValue != rhs.BookValue || lhs.DividendPerShare != rhs.DividendPerShare {
+            return false
+        }
+        if lhs.DividendYield != rhs.DividendYield || lhs.EPS != rhs.EPS || lhs.RevenuePerShareTTM != rhs.RevenuePerShareTTM || lhs.ProfitMargin != rhs.ProfitMargin || lhs.OperatingMarginTTM != rhs.OperatingMarginTTM || lhs.ReturnOnAssetsTTM != rhs.ReturnOnAssetsTTM || lhs.ReturnOnEquityTTM != rhs.ReturnOnEquityTTM || lhs.RevenueTTM != rhs.RevenueTTM || lhs.GrossProfitTTM != rhs.GrossProfitTTM || lhs.DilutedEPSTTM != rhs.DilutedEPSTTM {
+            return false
+        }
+        if lhs.QuarterlyEarningsGrowthYOY != rhs.QuarterlyEarningsGrowthYOY || lhs.QuarterlyRevenueGrowthYOY != rhs.QuarterlyRevenueGrowthYOY || lhs.AnalystTargetPrice != rhs.AnalystTargetPrice || lhs.AnalystRatingStrongBuy != rhs.AnalystRatingStrongBuy || lhs.AnalystRatingBuy != rhs.AnalystRatingBuy || lhs.AnalystRatingHold != rhs.AnalystRatingHold || lhs.AnalystRatingSell != rhs.AnalystRatingSell || lhs.AnalystRatingStrongSell != rhs.AnalystRatingStrongSell || lhs.TrailingPE != rhs.TrailingPE || lhs.ForwardPE != rhs.ForwardPE {
+            return false
+        }
+        if lhs.PriceToSalesRatioTTM != rhs.PriceToSalesRatioTTM || lhs.PriceToBookRatio != rhs.PriceToBookRatio || lhs.EVToRevenue != rhs.EVToRevenue || lhs.EVToEBITDA != rhs.EVToEBITDA || lhs.Beta != rhs.Beta || lhs._52WeekHigh != rhs._52WeekHigh || lhs._52WeekLow != rhs._52WeekLow || lhs._50DayMovingAverage != rhs._50DayMovingAverage || lhs._200DayMovingAverage != rhs._200DayMovingAverage || lhs.SharesOutstanding != rhs.SharesOutstanding {
+            return false
+        }
+        return lhs.DividendDate == rhs.DividendDate &&
+            lhs.ExDividendDate == rhs.ExDividendDate &&
+            lhs.Information == rhs.Information
+    }
 }
