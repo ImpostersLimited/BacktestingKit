@@ -89,6 +89,7 @@ extension BKQuickDemoError: BKUserPresentableError {
         switch self {
         case .missingBundledCSV: return "missing_bundled_csv"
         case .emptyCSV: return "empty_csv"
+        case .unsupportedPreset: return "unsupported_preset"
         }
     }
 }

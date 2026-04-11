@@ -42,6 +42,7 @@ public enum BKQuickDemoDataset: String, CaseIterable, Sendable {
 public enum BKQuickDemoError: LocalizedError {
     case missingBundledCSV(BKQuickDemoDataset)
     case emptyCSV
+    case unsupportedPreset(BKPresetCatalog)
 
     public var errorDescription: String? {
         switch self {
@@ -49,6 +50,8 @@ public enum BKQuickDemoError: LocalizedError {
             return "Bundled demo CSV '\(dataset.rawValue).csv' is missing. Reinstall the package and try again."
         case .emptyCSV:
             return "Demo CSV was parsed but no bars were produced."
+        case .unsupportedPreset(let preset):
+            return "Preset '\(preset.displayName)' is not supported by the bundled quick demo helpers."
         }
     }
 }
@@ -93,6 +96,65 @@ public enum BKQuickDemo {
         #endif
     }
 
+    /// Loads bundled CSV text for a demo dataset.
+    public static func loadBundledCSV(dataset: BKQuickDemoDataset) -> Result<String, Error> {
+        guard let csvURL = bundledCSVURL(for: dataset) else {
+            return .failure(BKQuickDemoError.missingBundledCSV(dataset))
+        }
+
+        do {
+            return .success(try String(contentsOf: csvURL, encoding: .utf8))
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    /// Parses CSV into chronological bars for quick-demo workflows.
+    public static func parseBars(
+        csv: String,
+        dateFormat: String = "yyyy-MM-dd",
+        reverse: Bool = false,
+        columnMapping: BKCSVColumnMapping? = nil
+    ) -> Result<[BKBar], Error> {
+        let trimmed = csv.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return .failure(BKQuickDemoError.emptyCSV)
+        }
+
+        switch csvToBars(trimmed, dateFormat: dateFormat, reverse: reverse, columnMapping: columnMapping) {
+        case .success(let bars):
+            guard !bars.isEmpty else {
+                return .failure(BKQuickDemoError.emptyCSV)
+            }
+            return .success(bars)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
+    /// Converts parsed bars into candles for manager-driven workflows.
+    public static func makeCandles(from bars: [BKBar]) -> [Candlestick] {
+        bars.map {
+            Candlestick(
+                date: $0.time,
+                open: $0.open,
+                high: $0.high,
+                low: $0.low,
+                close: $0.close,
+                volume: $0.volume
+            )
+        }
+    }
+
+    /// Builds an onboarding-friendly run summary from demo inputs.
+    public static func summarize(
+        symbol: String,
+        bars: [BKBar],
+        result: BacktestResult
+    ) -> BKRunSummary {
+        BKEngine.summarize(symbol: symbol, bars: bars, result: result)
+    }
+
     /// One-line quick demo for Playground/SPM users.
     /// Runs bundled 10y/1d SMA crossover (5/20) from bundled CSV (offline).
     @discardableResult
@@ -111,39 +173,25 @@ public enum BKQuickDemo {
             log("[Demo] Using caller-provided CSV input.")
         } else {
             log("[Demo] Loading bundled sample CSV (\(dataset.rawValue).csv)...")
-            guard let csvURL = bundledCSVURL(for: dataset) else {
-                return .failure(BKQuickDemoError.missingBundledCSV(dataset))
-            }
-            do {
-                csvData = try String(contentsOf: csvURL, encoding: .utf8)
-            } catch {
+            switch loadBundledCSV(dataset: dataset) {
+            case .success(let bundledCSV):
+                csvData = bundledCSV
+            case .failure(let error):
                 return .failure(error)
             }
         }
 
         log("[Demo] Parsing CSV with strict chronological + ISO8601-compatible date handling...")
         let bars: [BKBar]
-        switch csvToBars(csvData, dateFormat: "yyyy-MM-dd", reverse: false) {
+        switch parseBars(csv: csvData, dateFormat: "yyyy-MM-dd", reverse: false) {
         case .success(let parsed):
             bars = parsed
         case .failure(let error):
             return .failure(error)
         }
-        guard !bars.isEmpty else {
-            return .failure(BKQuickDemoError.emptyCSV)
-        }
         log("[Demo] Parsed \(bars.count) bars.")
 
-        let candles = bars.map {
-            Candlestick(
-                date: $0.time,
-                open: $0.open,
-                high: $0.high,
-                low: $0.low,
-                close: $0.close,
-                volume: $0.volume
-            )
-        }
+        let candles = makeCandles(from: bars)
 
         log("[Demo] Running backtest...")
         let manager = BacktestingKitManager()
@@ -172,6 +220,45 @@ public enum BKQuickDemo {
             dateRangeEnd: end,
             result: result
         ))
+    }
+
+    /// Runs an SMA crossover workflow directly from inline CSV.
+    @discardableResult
+    public static func runSMACrossoverDemo(
+        symbol: String,
+        csv: String,
+        fast: Int = 5,
+        slow: Int = 20,
+        log: @Sendable (String) -> Void = { print($0) }
+    ) -> Result<BKQuickDemoSummary, Error> {
+        let trimmed = csv.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return .failure(BKQuickDemoError.emptyCSV)
+        }
+
+        log("[Demo] Starting inline CSV SMA crossover demo.")
+        log("[Demo] Strategy: SMA crossover (\(fast) / \(slow)), Symbol: \(symbol).")
+
+        let bars: [BKBar]
+        switch parseBars(csv: csv, dateFormat: "yyyy-MM-dd", reverse: false) {
+        case .success(let parsed):
+            bars = parsed
+        case .failure(let error):
+            return .failure(error)
+        }
+        let candles = makeCandles(from: bars)
+
+        let manager = BacktestingKitManager()
+        let result = manager.backtestSMACrossover(candles: candles, fast: fast, slow: slow)
+        return .success(
+            BKQuickDemoSummary(
+                symbol: symbol,
+                barCount: bars.count,
+                dateRangeStart: bars[0].time,
+                dateRangeEnd: bars[bars.count - 1].time,
+                result: result
+            )
+        )
     }
 
     @discardableResult

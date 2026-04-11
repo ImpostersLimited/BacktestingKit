@@ -22,8 +22,8 @@
                 struct MyProvider: BKRawCsvProvider {
                     let csv: String
 
-                    func getRawCsv(ticker: String, p1: Double, p2: Double) async throws -> String {
-                        csv
+                    func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error> {
+                        .success(csv)
                     }
                 }
                 ```

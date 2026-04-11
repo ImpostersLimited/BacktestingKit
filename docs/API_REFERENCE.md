@@ -15,6 +15,24 @@ All runtime entrypoints are **Result-based** (`Result<Success, Failure>`) and av
   Runs one instrument through v2-compatible simulation.
 - `runDemo(dataset:csv:log:)`
   Runs offline bundled demo data and returns a summary suitable for UI preview.
+- `runPreset(dataset:preset:log:)`
+  Runs a bundled dataset through one of the stable preset workflows and returns `BKRunSummary`.
+- `runPresetCSV(symbol:csv:preset:dateFormat:reverse:columnMapping:log:)`
+  Runs inline CSV through a preset-backed workflow without defining a provider or building candles manually.
+- `preflightAndRunCSV(symbol:csv:preset:dateFormat:reverse:columnMapping:log:)`
+  Bundles CSV preflight validation and preset execution into one structured helper report.
+- `runScenario(config:)`
+  Runs a deterministic synthetic scenario and returns a compact `BKRunSummary`.
+- `summarize(symbol:bars:result:)`
+  Builds a compact `BKRunSummary` from parsed bars and an existing `BacktestResult`.
+- `summarize(symbol:candles:result:)`
+  Builds the same summary from candles.
+- `runDemoCSV(symbol:csv:fast:slow:log:)`
+  Executes the built-in SMA crossover workflow directly from inline CSV.
+- `runV2CSV(...)` / `runV3CSV(...)`
+  Execute v2/v3 flows from inline CSV without defining a custom provider.
+- `runV2ValidatedCSV(...)` / `runV3ValidatedCSV(...)`
+  Bundle CSV preflight, request validation, and engine execution into one app-facing report payload.
 - `makeV3Driver` / `makeV2Driver`
   Injectable driver builders used to override internals in tests or custom setups.
 
@@ -28,6 +46,8 @@ Single-call API layer intended for concise app code and Playground usage.
   Input envelope for one-instrument v2 runs.
 - `runBKV3(_:)` / `runBKV2(_:)`
   Primary one-liner execution functions.
+- `runBKV3CSV(...)` / `runBKV2CSV(...)`
+  Inline-CSV convenience wrappers around the canonical `BKEngine` CSV helper paths.
 - `runV3(_:)`, `runV2(_:)`, `runATV3(_:)`, `runATV2(_:)`
   Compatibility aliases to support migration from older naming.
 
@@ -84,6 +104,18 @@ Compact summary for demo execution:
 
 - `runBundledSMACrossoverDemo(dataset:csv:log:)`
   Executes SMA(5/20) crossover on bundled or caller-provided CSV.
+- `loadBundledCSV(dataset:)`
+  Loads bundled CSV text for a demo dataset.
+- `parseBars(csv:dateFormat:reverse:columnMapping:)`
+  Parses demo CSV into chronological bars with strict failure handling.
+- `makeCandles(from:)`
+  Converts bars into candles for manager-owned workflows.
+- `summarize(symbol:bars:result:)`
+  Builds a `BKRunSummary` from a completed demo workflow.
+- `runBundledPresetDemo(dataset:preset:log:)`
+  Runs a bundled dataset through a preset-backed workflow and returns `BKRunSummary`.
+- `runBundledSmokeMatrix(datasets:preset:log:)`
+  Executes one preset across multiple bundled datasets for deterministic smoke testing.
 - `runAAPL10Y1DSMACrossover(csv:log:)`
   AAPL convenience wrapper.
 
@@ -208,6 +240,10 @@ Protocol for any raw CSV source.
 
 Closure-backed provider for app-controlled data pipelines.
 
+## `BKInlineCsvProvider`
+
+Public provider that always returns the caller-supplied CSV string. Intended for helper workflows and tests.
+
 ## `BKCachedCsvProvider`
 
 Decorator adding in-memory LRU-like/TTL caching and metrics around another provider.
@@ -258,6 +294,184 @@ Persistence abstraction for v3 simulation artifacts (configs/rules/analysis/trad
 
 - `BKBar`
   canonical OHLCV(+optional adjusted close) bar.
+
+## 7) Helper Workflow Models
+
+App/demo-oriented helper models:
+
+- `BKRunHeadlineMetrics`
+  Compact headline metrics derived from `BacktestResult` or v2 analysis output.
+- `BKRunSummary`
+  Symbol, bar count, date range, and headline metrics for UI and export workflows.
+- `BKAppPresetMarkdownReport`
+  App-facing result of preset-backed CSV execution plus Markdown export.
+- `BKAppScenarioBundleReport`
+  App-facing result of deterministic scenario execution plus portable bundle export.
+- `BKPreflightedRunSummary`
+  Structured output for CSV preflight plus preset execution workflows.
+- `BKV2ValidatedRunReport`
+  Bundled preflight, request validation, and execution result for inline v2 CSV flows.
+- `BKV3ValidatedRunReport`
+  Bundled preflight, request validation, and execution result for inline v3 CSV flows.
+- `BKStrategyRecipe`
+  Stable manager-owned strategy recipe enum for additive helper workflows.
+- `BKIndicatorBundleResult`
+  Enriched candle series plus applied indicator keys.
+- `BKManagerReportSnapshot`
+  Compact packaging of report and advanced-performance highlights.
+- `BKStrategyRecipeReport`
+  Raw result plus summary/report packaging for manager-owned recipe flows.
+- `BKToolPreflightReport`
+  Validation readiness plus row count/date range and diagnostics events.
+- `BKDiagnosticsSnapshotReport`
+  Event counts, time range, stage counts, and last failure-like event.
+- `BKToolExportBundle`
+  Preflight-oriented export payloads.
+- `BKRunExportBundle`
+  Summary-oriented export payloads for run/scenario workflows.
+- `BKRunMetricDiff`
+  Headline metric deltas between baseline and candidate run summaries.
+- `BKRunSummaryDiff`
+  Structured summary-level diff including metadata and metric changes.
+- `BKRunComparisonReport`
+  Tolerance-aware comparison report for summary-oriented regressions.
+- `BKComparisonAssertionError`
+  Error payload thrown by `BKComparisonTool.assertEquivalent(...)` on material summary differences.
+- `BKScenarioReadinessReport`
+  Validation-style readiness output for deterministic scenario config checks.
+- `BKScenarioSmokeCaseReport`
+  One case inside a deterministic smoke suite.
+- `BKScenarioSmokeSuiteReport`
+  Aggregate output for deterministic scenario smoke matrix runs.
+
+## 8) Manager Helper Bundles
+
+`BacktestingKitManager` now includes additive mid-level helpers for common composition paths.
+
+- `applyTrendIndicatorBundle(candles:smaPeriods:emaPeriods:keyNamespace:)`
+- `applyMomentumIndicatorBundle(candles:rsiPeriod:stochasticKPeriod:stochasticDPeriod:keyNamespace:)`
+- `applyVolatilityIndicatorBundle(candles:atrPeriod:bollingerPeriod:bollingerStdDev:keyNamespace:)`
+- `applyDefaultScreeningBundle(candles:keyNamespace:)`
+  Applies the package's default trend + momentum + volatility screening set in one pass.
+- `buildHeadlineMetrics(from:)`
+- `buildSummary(symbol:candles:result:)`
+- `buildReportSnapshot(from:candles:)`
+- `buildReportSnapshot(from:)`
+- `buildAdvancedPerformanceMetrics(from:candles:minimumAcceptableReturn:)`
+- `runSMACrossoverSummary(symbol:candles:fast:slow:)`
+- `runEMAFastSlowSummary(symbol:candles:fastPeriod:slowPeriod:)`
+- `parseAndRunRecipe(_:,csv:dateFormat:reverse:columnMapping:)`
+  Parses inline CSV, converts to candles, and runs a stable built-in recipe.
+- `runStrategyRecipe(_:,candles:)`
+- `runStrategyRecipeSummary(_:,symbol:candles:)`
+- `runRecipeReport(_:,symbol:candles:minimumAcceptableReturn:)`
+  Returns the raw result, compact summary, report snapshot, and advanced metrics in one bundle.
+
+## 9) Tool Workflow Helpers
+
+Validation, diagnostics, export, and synthetic-scenario helpers:
+
+- `BKValidationTool.preflightCSV(_:symbol:columnMapping:)`
+  Richer CSV readiness workflow with row count and parsed date range.
+- `BKDiagnosticsCollector.summarizedSnapshot()`
+  Packages retained diagnostics into a compact export/report shape.
+- `BKExportTool.exportPreflight(_:trades:prettyPrinted:)`
+  Encodes preflight, diagnostics, and optional trades into a bundle.
+- `BKExportTool.exportRunBundle(summary:trades:diagnostics:scenario:prettyPrinted:)`
+  Encodes run/scenario workflows into a portable summary bundle.
+- `BKExportTool.exportMarkdownSummary(_:,title:)`
+  Renders a compact run summary into human-readable Markdown.
+- `BKComparisonTool.diffSummaries(baseline:candidate:)`
+  Produces a structured field-by-field summary diff.
+- `BKComparisonTool.compareRuns(baseline:candidate:tolerance:)`
+  Flags whether summary changes exceed a caller-provided tolerance.
+- `BKComparisonTool.assertEquivalent(baseline:candidate:tolerance:)`
+  Throws `BKComparisonAssertionError` when material differences remain after tolerance is applied.
+- `BKScenarioTool.validate(config:)`
+  Checks deterministic scenario config sanity before execution.
+- `BKScenarioTool.summarize(config:)`
+  Runs a deterministic scenario and returns a `BKRunSummary`.
+- `BKScenarioTool.runExportBundle(config:diagnostics:prettyPrinted:)`
+  Runs a deterministic scenario and exports summary-oriented artifacts.
+- `BKScenarioTool.defaultSmokeConfigs()`
+  Returns the package's deterministic smoke matrix defaults.
+- `BKScenarioTool.smokeSuite(configs:)`
+  Runs a deterministic smoke suite and returns structured pass/fail results per case.
+
+## 10) App Facade
+
+`BKAppFacade` is the app-facing helper namespace for beginner and integration workflows.
+
+- `buildCSVImportScreenState(symbol:csv:maxRows:)`
+  Builds one import-review payload with inspection, inference, preview, validation, normalization, grouped issues, and a readiness flag for app import screens.
+- `runConfirmedCSVImport(from:csv:preset:confirmedSettings:log:)`
+  Executes a reviewed CSV import using the screen-state settings or explicit user-confirmed overrides.
+- `diagnoseCSVImport(symbol:csv:maxFailureRows:)`
+  Builds a developer-facing postmortem report with stage decisions, inferred/effective settings, and bounded row-level failure examples.
+- `inspectCSV(symbol:csv:columnMapping:)`
+  Returns a compact structural readiness report over imported CSV.
+- `detectCSVImportSettings(symbol:csv:)`
+  Safely infers CSV import settings and reports both inferred and effective settings for app-side auto-apply flows.
+- `previewCSV(symbol:csv:dateFormat:reverse:columnMapping:maxRows:)`
+  Builds a bounded preview payload for app import screens.
+- `previewCSVAuto(symbol:csv:maxRows:)`
+  Applies the safe inference layer, then returns a bounded preview plus the inference report.
+- `validateCSVImport(symbol:csv:dateFormat:reverse:columnMapping:)`
+  Combines structural preflight and parse validation into one app-facing report.
+- `validateCSVImportAuto(symbol:csv:)`
+  Uses safe inferred settings before returning the same app-facing validation payload.
+- `normalizeCSVImport(symbol:csv:dateFormat:reverse:columnMapping:)`
+  Returns validated bars/candles plus date-range and row-count metadata.
+- `normalizeCSVImportAuto(symbol:csv:)`
+  Uses safe inferred settings before returning normalized bars/candles plus the inference report.
+- `runCSVImport(symbol:csv:preset:dateFormat:reverse:columnMapping:log:)`
+  Runs the full app-side CSV import path through a preset-backed execution helper.
+- `runCSVImportAuto(symbol:csv:preset:log:)`
+  Uses safe inferred settings, normalizes descending input when needed, and runs the same preset-backed app import path.
+- `runCSVImportAndExportMarkdown(...)`
+  Runs CSV import plus Markdown summary export in one call.
+- `runCSVImportAutoAndExportMarkdown(...)`
+  Runs the auto-inference import path and exports a Markdown summary when successful.
+- `runPreset(dataset:preset:log:)`
+- `runPresetCSV(symbol:csv:preset:dateFormat:reverse:columnMapping:log:)`
+- `preflightAndRunCSV(symbol:csv:preset:dateFormat:reverse:columnMapping:log:)`
+- `runScenario(config:)`
+- `runV2ValidatedCSV(...)`
+- `runV3ValidatedCSV(...)`
+- `exportMarkdownSummary(_:,title:)`
+- `exportRunBundle(summary:trades:diagnostics:scenario:prettyPrinted:)`
+- `compareRuns(baseline:candidate:tolerance:)`
+- `assertEquivalent(baseline:candidate:tolerance:)`
+- `runPresetCSVAndExportMarkdown(...)`
+- `runScenarioAndExportBundle(config:diagnostics:prettyPrinted:)`
+
+CSV import models:
+
+- `BKAppCSVInspectionReport`
+- `BKAppCSVInferenceIssue`
+- `BKAppCSVInferredSettings`
+- `BKAppCSVEffectiveSettings`
+- `BKAppCSVInferenceReport`
+- `BKAppCSVPreviewRow`
+- `BKAppCSVPreviewReport`
+- `BKAppCSVAutoPreviewReport`
+- `BKAppCSVValidationReport`
+- `BKAppCSVAutoValidationReport`
+- `BKAppCSVNormalizedReport`
+- `BKAppCSVAutoNormalizedReport`
+- `BKAppCSVImportScreenStatus`
+- `BKAppCSVImportIssueSource`
+- `BKAppCSVImportIssueItem`
+- `BKAppCSVImportIssueSection`
+- `BKAppCSVImportScreenState`
+- `BKAppCSVImportRunReport`
+- `BKAppCSVAutoRunReport`
+- `BKAppCSVImportMarkdownReport`
+- `BKAppCSVAutoMarkdownReport`
+- `BKAppCSVImportStageDecision`
+- `BKAppCSVImportFailureStage`
+- `BKAppCSVRowFailureExample`
+- `BKAppCSVImportDiagnosticsReport`
 
 - `BKBacktestOptions`
 - `BKPosition`
@@ -555,6 +769,15 @@ These APIs are additive helpers and do not change v2/v3 engine output model shap
 - `BKScenarioTool`
   - `generateCandles(config:)`
   - `run(config:)`
+
+## Comparison
+
+- `BKRunMetricDiff`
+- `BKRunSummaryDiff`
+- `BKRunComparisonReport`
+- `BKComparisonTool`
+  - `diffSummaries(baseline:candidate:)`
+  - `compareRuns(baseline:candidate:tolerance:)`
 
 ## Export
 

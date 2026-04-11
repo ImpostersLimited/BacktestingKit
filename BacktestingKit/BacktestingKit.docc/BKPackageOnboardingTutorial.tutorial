@@ -1,0 +1,83 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Get Started with BacktestingKit") {
+        Follow a single beginner path from building the package to integrating the canonical engine entrypoints in an app.
+    }
+
+    @Section(title: "Build and prove the package works") {
+        @ContentAndMedia {
+            Start with a local build and a bundled demo. This gives you a first success without API keys, network calls, or custom providers.
+        }
+
+        @Steps {
+            @Step {
+                Build the package from the repository root:
+
+                ```bash
+                swift build
+                ```
+            }
+
+            @Step {
+                Import the module:
+
+                ```swift
+                import BacktestingKit
+                ```
+            }
+
+            @Step {
+                Run the bundled demo:
+
+                ```swift
+                let result = BKEngine.runDemo(dataset: .aapl) { line in
+                    print(line)
+                }
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Move from bundled data to your own CSV") {
+        @ContentAndMedia {
+            Once the bundled demo works, inline CSV is the shortest path for tests, previews, onboarding UIs, and local experiments.
+        }
+
+        @Steps {
+            @Step {
+                Validate CSV before execution:
+
+                ```swift
+                let report = BKValidationTool.preflightCSV(csv, symbol: "AAPL")
+                ```
+            }
+
+            @Step {
+                Run the helper workflow:
+
+                ```swift
+                let result = BKEngine.runDemoCSV(symbol: "AAPL", csv: csv)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Graduate into app integration") {
+        @ContentAndMedia {
+            When you are ready for production-style usage, move to ``BKEngine`` and construct explicit v2 or v3 requests.
+        }
+
+        @Steps {
+            @Step {
+                Create a `BKRawCsvProvider` or use a closure-backed provider.
+            }
+
+            @Step {
+                Build a request and run ``BKEngine/runV3(_:)`` or ``BKEngine/runV2(_:)``.
+            }
+
+            @Step {
+                Continue with the focused tutorials for helpers, manager workflows, and tooling.
+            }
+        }
+    }
+}

@@ -1,0 +1,84 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Review CSV Imports in an App") {
+        Build an app-facing CSV import review flow with `BKAppFacade`, then hand off into execution only when the imported data is ready.
+    }
+
+    @Section(title: "Start with one review-state helper") {
+        @ContentAndMedia {
+            Use ``BKAppFacade/buildCSVImportScreenState(symbol:csv:maxRows:)`` when your app needs inspection, inferred settings, preview rows, grouped issues, validation, normalization, and a readiness flag in one payload.
+        }
+
+        @Steps {
+            @Step {
+                Build the review state:
+
+                ```swift
+                let screenState = BKAppFacade.buildCSVImportScreenState(
+                    symbol: "AAPL",
+                    csv: csv,
+                    maxRows: 5
+                )
+                ```
+            }
+
+            @Step {
+                Render the grouped issues and status:
+
+                ```swift
+                print(screenState.status)
+                print(screenState.issues)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Gate execution on readiness") {
+        @ContentAndMedia {
+            The import-review helper does not execute anything. It prepares the app-side state so your UI can decide whether to continue.
+        }
+
+        @Steps {
+            @Step {
+                Check readiness:
+
+                ```swift
+                guard screenState.isReadyToContinue else {
+                    return
+                }
+                ```
+            }
+
+            @Step {
+                Hand off to execution:
+
+                ```swift
+                let run = BKAppFacade.runConfirmedCSVImport(
+                    from: screenState,
+                    csv: csv,
+                    preset: .smaCrossover
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Know when to use lower-level helpers") {
+        @ContentAndMedia {
+            Stay on the review-state helper for import screens. Drop to the lower-level CSV helpers only when the app needs finer control over preview, validation, normalization, or execution as separate steps.
+        }
+
+        @Steps {
+            @Step {
+                Use ``BKAppFacade/previewCSV(symbol:csv:dateFormat:reverse:columnMapping:maxRows:)`` or ``BKAppFacade/previewCSVAuto(symbol:csv:maxRows:)`` if the app needs a preview without the full screen-state payload.
+            }
+
+            @Step {
+                Use ``BKAppFacade/validateCSVImport(symbol:csv:dateFormat:reverse:columnMapping:)`` or ``BKAppFacade/validateCSVImportAuto(symbol:csv:)`` if the app wants validation as its own explicit checkpoint.
+            }
+
+            @Step {
+                Use ``BKEngine`` only after you need direct request-model control.
+            }
+        }
+    }
+}

@@ -23,20 +23,25 @@
                 Run the demo:
 
                 ```swift
-                let summary = try BKEngine.runDemo(dataset: .aapl) { line in
+                let result = BKEngine.runDemo(dataset: .aapl) { line in
                     print(line)
                 }
                 ```
             }
 
             @Step {
-                Read the output:
+                Read the `Result` output:
 
                 ```swift
-                print(summary.symbol)
-                print(summary.barCount)
-                print(summary.result.totalReturn)
-                print(summary.result.maxDrawdown)
+                switch result {
+                case .success(let summary):
+                    print(summary.symbol)
+                    print(summary.barCount)
+                    print(summary.result.totalReturn)
+                    print(summary.result.maxDrawdown)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
                 ```
             }
         }

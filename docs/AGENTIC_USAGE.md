@@ -79,6 +79,37 @@ Higher-risk areas that require parity proof:
 - `BKExportTool`
   - persist artifacts for reproducibility and review
 
+## Recommended Helper Workflow for Agents
+
+For quick validation and smoke-test loops, prefer the additive helper layer before constructing full engine requests manually:
+
+1. `BKValidationTool.preflightCSV(...)`
+   - validate CSV, row count, and parsed date range
+2. `BKEngine.runDemoCSV(...)` or `BKQuickDemo.runBundledPresetDemo(...)`
+   - get a deterministic summary quickly
+3. `BKDiagnosticsCollector.summarizedSnapshot()`
+   - package lifecycle events into one compact report
+4. `BKExportTool.exportRunBundle(...)` or `BKScenarioTool.runExportBundle(...)`
+   - persist summary/trade/diagnostics artifacts for review
+
+Smoke-test matrix example:
+
+```swift
+let matrix = BKQuickDemo.runBundledSmokeMatrix(
+    datasets: [.aapl, .msft, .nvda],
+    preset: .smaCrossover
+)
+```
+
+Scenario-check example:
+
+```swift
+let readiness = BKScenarioTool.validate(config: BKScenarioConfig(symbol: "SCENARIO"))
+guard readiness.isReady else { return }
+
+let summary = BKScenarioTool.summarize(config: readiness.config)
+```
+
 ## CI / Automation Recommendations
 
 For PR automation agents:

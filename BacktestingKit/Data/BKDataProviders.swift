@@ -57,6 +57,21 @@ public protocol BKRawCsvProvider {
     func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error>
 }
 
+/// Inline CSV provider for app-facing helper workflows and tests.
+public struct BKInlineCsvProvider: BKRawCsvProvider, Sendable {
+    public let csv: String
+
+    /// Creates a new instance.
+    public init(csv: String) {
+        self.csv = csv
+    }
+
+    /// Executes `getRawCsv`.
+    public func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error> {
+        .success(csv)
+    }
+}
+
 /// Represents `BKCustomCsvProvider` in the BacktestingKit public API.
 public struct BKCustomCsvProvider: BKRawCsvProvider, Sendable {
     /// Provides the `Loader` typealias for BacktestingKit interoperability.

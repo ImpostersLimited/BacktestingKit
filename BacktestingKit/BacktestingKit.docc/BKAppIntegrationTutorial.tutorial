@@ -1,0 +1,106 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Integrate BacktestingKit into an App") {
+        Start from the app-facing facade for CSV import and review, then drop to `BKEngine` when you need direct request-model control.
+    }
+
+    @Section(title: "Start with BKAppFacade for import-review screens") {
+        @ContentAndMedia {
+            Prefer ``BKAppFacade`` when your app starts from pasted, uploaded, or edited CSV and needs one stable review payload before execution.
+        }
+
+        @Steps {
+            @Step {
+                Build the import-review state:
+
+                ```swift
+                let screenState = BKAppFacade.buildCSVImportScreenState(
+                    symbol: "AAPL",
+                    csv: csv,
+                    maxRows: 5
+                )
+                ```
+            }
+
+            @Step {
+                Use the readiness flag before execution:
+
+                ```swift
+                guard screenState.isReadyToContinue else {
+                    print(screenState.issues)
+                    return
+                }
+                ```
+            }
+
+            @Step {
+                Hand off to execution with the reviewed settings:
+
+                ```swift
+                let confirmedRun = BKAppFacade.runConfirmedCSVImport(
+                    from: screenState,
+                    csv: csv,
+                    preset: .smaCrossover
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Drop to BKEngine when you need direct request control") {
+        @ContentAndMedia {
+            Prefer ``BKEngine`` when integrating the package into an app at the request-model layer. It is the stable top-level execution surface for v2 and v3 flows.
+        }
+    }
+
+    @Section(title: "Provide CSV through a provider") {
+        @Steps {
+            @Step {
+                Define a provider:
+
+                ```swift
+                struct AppProvider: BKRawCsvProvider {
+                    let csv: String
+
+                    func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error> {
+                        .success(csv)
+                    }
+                }
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run the canonical v3 flow") {
+        @Steps {
+            @Step {
+                Build a request:
+
+                ```swift
+                let request = BKEngine.V3Request(
+                    instrument: instrument,
+                    p1: 5,
+                    p2: 20,
+                    executionOptions: .init(parserMode: .streamingStrict),
+                    dataStore: dataStore,
+                    csvProvider: AppProvider(csv: csv),
+                    log: { print($0) }
+                )
+                ```
+            }
+
+            @Step {
+                Execute it:
+
+                ```swift
+                let result = await BKEngine.runV3(request)
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Know when to branch into other guides") {
+        @ContentAndMedia {
+            After you can run the facade-first import-review flow and the canonical engine path, use helper workflows for short paths, `BacktestingKitManager` for candle-first composition, and tool helpers for validation, export, comparison, scenario, and parity flows.
+        }
+    }
+}

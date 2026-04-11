@@ -1,7 +1,7 @@
 import Foundation
 
 /// Event kind emitted by diagnostics instrumentation.
-public enum BKDiagnosticEventKind: String, Codable, Equatable {
+public enum BKDiagnosticEventKind: String, Codable, Equatable, Sendable {
     case validationStarted
     case validationFailed
     case parsingStarted
@@ -14,7 +14,7 @@ public enum BKDiagnosticEventKind: String, Codable, Equatable {
 }
 
 /// Structured event emitted to support UI progress and diagnostics.
-public struct BKDiagnosticEvent: Codable, Equatable {
+public struct BKDiagnosticEvent: Codable, Equatable, Sendable {
     /// Event creation timestamp.
     public var timestamp: Date
     /// Machine-readable event kind.
@@ -84,6 +84,29 @@ public actor BKDiagnosticsCollector {
     /// Returns a snapshot of all retained events.
     public func snapshot() -> [BKDiagnosticEvent] {
         events
+    }
+
+    /// Returns a compact summary of retained diagnostics activity.
+    public func summarizedSnapshot() -> BKDiagnosticsSnapshotReport {
+        let stageCounts = events.reduce(into: [String: Int]()) { partialResult, event in
+            partialResult[event.stage, default: 0] += 1
+        }
+        let lastFailureEvent = events.last { event in
+            switch event.kind {
+            case .validationFailed, .simulationFailed:
+                return true
+            default:
+                return false
+            }
+        }
+
+        return BKDiagnosticsSnapshotReport(
+            eventCount: events.count,
+            firstTimestamp: events.first?.timestamp,
+            lastTimestamp: events.last?.timestamp,
+            stageCounts: stageCounts,
+            lastFailureEvent: lastFailureEvent
+        )
     }
 
     /// Clears all retained events.

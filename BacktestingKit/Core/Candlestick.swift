@@ -4,7 +4,7 @@
 import Foundation
 
 /// Represents `Candlestick` in the BacktestingKit public API.
-public struct Candlestick: Equatable, Codable {
+public struct Candlestick: Equatable, Codable, Sendable {
     public let date: Date
     public let open: Double
     public let high: Double

@@ -1,0 +1,75 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Use Tool Workflows") {
+        Validate inputs, capture diagnostics, export results, compare runs, and benchmark the package without changing the engine contracts.
+    }
+
+    @Section(title: "Validate and diagnose") {
+        @Steps {
+            @Step {
+                Preflight CSV input:
+
+                ```swift
+                let report = BKValidationTool.preflightCSV(csv, symbol: "AAPL")
+                ```
+            }
+
+            @Step {
+                Capture diagnostics:
+
+                ```swift
+                let collector = BKDiagnosticsCollector()
+                await collector.emit(kind: .simulationStarted, stage: "simulation", message: "Running")
+                let diagnostics = await collector.summarizedSnapshot()
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Export and compare runs") {
+        @Steps {
+            @Step {
+                Export a run summary:
+
+                ```swift
+                let export = BKExportTool.exportRunBundle(summary: summary)
+                ```
+            }
+
+            @Step {
+                Compare two summaries:
+
+                ```swift
+                let comparison = BKComparisonTool.compareRuns(
+                    baseline: baselineSummary,
+                    candidate: candidateSummary,
+                    tolerance: 0.001
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run scenario, benchmark, and parity utilities") {
+        @Steps {
+            @Step {
+                Run a deterministic scenario export:
+
+                ```swift
+                let scenarioExport = BKScenarioTool.runExportBundle(
+                    config: BKScenarioConfig(symbol: "SCENARIO", seed: 42)
+                )
+                ```
+            }
+
+            @Step {
+                Benchmark a code path:
+
+                ```swift
+                let bench = BKBenchmarkTool.run(name: "parse", iterations: 20) {
+                    _ = csvToBarsStreaming(csv, reverse: false, strict: true)
+                }
+                ```
+            }
+        }
+    }
+}

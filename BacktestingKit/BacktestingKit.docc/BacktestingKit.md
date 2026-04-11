@@ -6,6 +6,9 @@ Production-grade Swift backtesting engine with v2/v3 parity paths, strict CSV in
 
 Use BacktestingKit to run deterministic strategy simulations with:
 
+- Beginner app-facing workflows via ``BKAppFacade``
+- Import-review screen state via ``BKAppFacade/buildCSVImportScreenState(symbol:csv:maxRows:)``
+- Explicit CSV auto-inference for app-side import flows
 - Canonical one-shot entry points via ``BKEngine``
 - Strict date/ordering-safe CSV parsing
 - v2 and v3 simulation compatibility paths
@@ -19,6 +22,7 @@ Use BacktestingKit to run deterministic strategy simulations with:
 
 ### Engine
 
+- ``BKAppFacade``
 - ``BKEngine``
 - ``BKEngineOneLiner``
 - ``BKQuickDemo``

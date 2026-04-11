@@ -1,14 +1,14 @@
 import Foundation
 
 /// Severity level for a validation issue.
-public enum BKValidationSeverity: String, Codable, Equatable {
+public enum BKValidationSeverity: String, Codable, Equatable, Sendable {
     case info
     case warning
     case error
 }
 
 /// A single validation finding emitted by `BKValidationTool`.
-public struct BKValidationIssue: Codable, Equatable {
+public struct BKValidationIssue: Codable, Equatable, Sendable {
     /// Stable issue code suitable for client-side branching.
     public var code: String
     /// Field or input path associated with the issue.
@@ -37,7 +37,7 @@ public struct BKValidationIssue: Codable, Equatable {
 }
 
 /// Aggregated output from a validation run.
-public struct BKValidationReport: Codable, Equatable {
+public struct BKValidationReport: Codable, Equatable, Sendable {
     /// True when no error-severity issues are present.
     public var isValid: Bool
     /// Ordered issue list collected during validation.
@@ -181,5 +181,51 @@ public enum BKValidationTool {
             )
         }
         return BKValidationReport(isValid: !issues.contains(where: { $0.severity == .error }), issues: issues)
+    }
+
+    /// Runs a structured CSV preflight that captures validation and diagnostics output.
+    public static func preflightCSV(
+        _ csv: String,
+        symbol: String? = nil,
+        columnMapping: BKCSVColumnMapping? = nil
+    ) -> BKToolPreflightReport {
+        let started = BKDiagnosticEvent(
+            kind: .validationStarted,
+            stage: "validation",
+            message: "Starting CSV preflight.",
+            metadata: symbol.map { ["symbol": $0] } ?? [:]
+        )
+        let validation = validateCSV(csv, columnMapping: columnMapping)
+        let finished = BKDiagnosticEvent(
+            kind: validation.isValid ? .parsingCompleted : .validationFailed,
+            stage: validation.isValid ? "parsing" : "validation",
+            message: validation.isValid ? "CSV preflight completed." : "CSV preflight failed.",
+            metadata: [
+                "issueCount": String(validation.issues.count)
+            ]
+        )
+        let rowCount = validation.issues
+            .compactMap { $0.metadata["rowCount"] }
+            .compactMap(Int.init)
+            .first
+        let barRange: (Date?, Date?) = {
+            guard validation.isValid else { return (nil, nil) }
+            switch csvToBarsStreaming(csv, reverse: false, strict: true, columnMapping: columnMapping) {
+            case .success(let bars):
+                return (bars.first?.time, bars.last?.time)
+            case .failure:
+                return (nil, nil)
+            }
+        }()
+
+        return BKToolPreflightReport(
+            symbol: symbol,
+            rowCount: rowCount,
+            startDate: barRange.0,
+            endDate: barRange.1,
+            validation: validation,
+            diagnostics: [started, finished],
+            isReady: validation.isValid
+        )
     }
 }

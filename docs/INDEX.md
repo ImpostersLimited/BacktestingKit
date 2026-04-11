@@ -4,9 +4,23 @@ This directory contains implementation-level documentation for the Swift engine.
 
 ## Start Here
 
-1. `GETTING_STARTED.md` — build/test/run setup and first execution paths.
-2. `ENGINE_GUIDE.md` — canonical APIs (`BKEngine`, drivers, one-liners).
-3. `DATA_INGESTION.md` — CSV parsing rules, custom mappings, provider abstraction.
+1. `ONBOARDING.md` — first-run beginner path from build to app integration.
+2. `PACKAGE_USAGE_GUIDE.md` — complete package usage map by workflow.
+3. `CHOOSE_YOUR_SURFACE.md` — decide when to use `BKAppFacade`, `BKEngine`, manager workflows, or tool helpers.
+4. `GETTING_STARTED.md` — build/test/run setup and first execution paths, including `BKAppFacade`.
+5. `ENGINE_GUIDE.md` — canonical APIs (`BKEngine`, drivers, one-liners).
+6. `DATA_INGESTION.md` — CSV parsing rules, custom mappings, provider abstraction.
+
+## Tutorials and Workflow Guides
+
+- `ONBOARDING.md` — the linear beginner path for learning the package.
+- `CHOOSE_YOUR_SURFACE.md` — quick routing guide across the main package surfaces.
+- `PACKAGE_USAGE_GUIDE.md` — one document that explains when to use each major package surface.
+- `GETTING_STARTED.md` — quickest route from clone to first successful run.
+- `HELPER_WORKFLOWS.md` — additive convenience layer for app and smoke-test workflows, including `BKAppFacade`.
+- `ENGINE_GUIDE.md` — v2/v3 engine entrypoints, requests, drivers, and batch orchestration.
+- `TOOLS.md` — validation, diagnostics, export, comparison, benchmark, scenario, and parity helpers.
+- `INDICATORS_STRATEGIES_METRICS.md` — manager-owned indicators, strategy recipes, analytics, and preset philosophy.
 
 ## Deep Dives
 

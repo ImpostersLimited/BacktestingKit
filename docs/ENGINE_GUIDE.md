@@ -120,8 +120,15 @@ let result = await BKEngine.runV3(
 ```swift
 import BacktestingKit
 
-let demo = try BKEngine.runDemo(dataset: .aapl) { line in
+let demo = BKEngine.runDemo(dataset: .aapl) { line in
     print(line)
+}
+
+switch demo {
+case .success(let summary):
+    print(summary.symbol)
+case .failure(let error):
+    print(error.localizedDescription)
 }
 ```
 
@@ -130,3 +137,4 @@ let demo = try BKEngine.runDemo(dataset: .aapl) { line in
 - Use `BKEngine` for app integration.
 - Use `BKSimulationDriver`/`BKV2SimulationDriver` when you need low-level orchestration.
 - Use `BKQuickDemo` for smoke tests, CI sanity checks, and playground validation.
+- Use `docs/PACKAGE_USAGE_GUIDE.md` when you want the package organized by workflow rather than by implementation layer.

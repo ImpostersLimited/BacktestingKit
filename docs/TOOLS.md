@@ -9,7 +9,8 @@ These tools do not alter v2/v3 engine model shapes or parity behavior.
 2. Emit lifecycle diagnostics (`BKDiagnosticsCollector`)
 3. Run engine (`BKEngine.runV2` / `BKEngine.runV3`)
 4. Export payloads (`BKExportTool`)
-5. Benchmark/parity checks in CI (`BKBenchmarkTool`, `BKParityTool`)
+5. Compare run summaries (`BKComparisonTool`)
+6. Benchmark/parity checks in CI (`BKBenchmarkTool`, `BKParityTool`)
 
 ## `BKValidationTool`
 
@@ -107,12 +108,20 @@ Purpose: Deterministic synthetic scenario generation for reproducible simulation
 
 - `generateCandles(config:)`
 - `run(config:)`
+- `defaultSmokeConfigs()`
+- `validate(config:)`
+- `summarize(config:)`
+- `runExportBundle(config:diagnostics:prettyPrinted:)`
+- `smokeSuite(configs:)`
 
 Config/result types:
 
 - `BKScenarioStrategy`
 - `BKScenarioConfig`
 - `BKScenarioResult`
+- `BKScenarioReadinessReport`
+- `BKScenarioSmokeCaseReport`
+- `BKScenarioSmokeSuiteReport`
 
 Example:
 
@@ -121,12 +130,43 @@ let scenario = BKScenarioTool.run(config: BKScenarioConfig(seed: 42))
 print(scenario.backtest.totalReturn)
 ```
 
+## `BKComparisonTool`
+
+Purpose: Compare compact helper summaries for regressions and smoke-test review.
+
+- `diffSummaries(baseline:candidate:)`
+  Produces a structured summary diff including headline metric deltas.
+- `compareRuns(baseline:candidate:tolerance:)`
+  Flags whether summary differences exceed a caller-supplied tolerance.
+- `assertEquivalent(baseline:candidate:tolerance:)`
+  Throws `BKComparisonAssertionError` when summary differences exceed the allowed tolerance.
+
+Output types:
+
+- `BKRunMetricDiff`
+- `BKRunSummaryDiff`
+- `BKRunComparisonReport`
+- `BKComparisonAssertionError`
+
+Example:
+
+```swift
+let report = BKComparisonTool.compareRuns(
+    baseline: baselineSummary,
+    candidate: candidateSummary,
+    tolerance: 0.001
+)
+```
+
 ## `BKExportTool`
 
 Purpose: Stable payload export for downstream tooling/UI.
 
 - `toJSON(_:prettyPrinted:)`
 - `tradesToCSV(_:)`
+- `exportPreflight(_:trades:prettyPrinted:)`
+- `exportRunBundle(summary:trades:diagnostics:scenario:prettyPrinted:)`
+- `exportMarkdownSummary(_:,title:)`
 
 Error type:
 

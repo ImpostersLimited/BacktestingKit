@@ -1,0 +1,91 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Use Helper Workflows") {
+        Run BacktestingKit from bundled data or inline CSV without wiring custom providers or low-level drivers.
+    }
+
+    @Section(title: "Run from inline CSV") {
+        @ContentAndMedia {
+            The fastest app-facing helper path is ``BKEngine/runDemoCSV(symbol:csv:fast:slow:log:)``.
+        }
+
+        @Steps {
+            @Step {
+                Prepare CSV:
+
+                ```swift
+                let csv = """
+                timestamp,open,high,low,close,volume
+                2024-01-01,100,101,99,100.5,1000000
+                2024-01-02,100.5,102,100,101.5,1100000
+                """
+                ```
+            }
+
+            @Step {
+                Run the helper:
+
+                ```swift
+                let result = BKEngine.runDemoCSV(symbol: "AAPL", csv: csv)
+                ```
+            }
+
+            @Step {
+                Inspect the result:
+
+                ```swift
+                switch result {
+                case .success(let summary):
+                    print(summary.symbol)
+                    print(summary.result.totalReturn)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run bundled preset demos") {
+        @Steps {
+            @Step {
+                Use the bundled dataset helpers:
+
+                ```swift
+                let presetResult = BKQuickDemo.runBundledPresetDemo(
+                    dataset: .aapl,
+                    preset: .smaCrossover
+                )
+                ```
+            }
+
+            @Step {
+                Run a deterministic smoke matrix:
+
+                ```swift
+                let matrixResult = BKQuickDemo.runBundledSmokeMatrix(
+                    datasets: [.aapl, .msft, .nvda],
+                    preset: .emaMeanReversion
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run deterministic scenarios") {
+        @ContentAndMedia {
+            Use ``BKEngine/runScenario(config:)`` when you want synthetic, repeatable candles for smoke tests or tutorials.
+        }
+
+        @Steps {
+            @Step {
+                Build a scenario:
+
+                ```swift
+                let summary = BKEngine.runScenario(
+                    config: BKScenarioConfig(symbol: "SCENARIO", barCount: 64, seed: 42)
+                )
+                ```
+            }
+        }
+    }
+}

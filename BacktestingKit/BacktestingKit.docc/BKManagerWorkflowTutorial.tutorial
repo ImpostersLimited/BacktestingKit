@@ -1,0 +1,70 @@
+@Tutorial(time: 20) {
+    @Intro(title: "Use Manager Workflows") {
+        Work directly with candles, indicators, strategy recipes, and metrics summaries through ``BacktestingKitManager``.
+    }
+
+    @Section(title: "Apply indicator bundles") {
+        @Steps {
+            @Step {
+                Create a manager:
+
+                ```swift
+                let manager = BacktestingKitManager()
+                ```
+            }
+
+            @Step {
+                Apply a trend bundle:
+
+                ```swift
+                let trend = manager.applyTrendIndicatorBundle(
+                    candles: candles,
+                    smaPeriods: [5, 20],
+                    emaPeriods: [12, 26],
+                    keyNamespace: "screen"
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run stable strategy recipes") {
+        @Steps {
+            @Step {
+                Execute a recipe:
+
+                ```swift
+                let result = manager.runStrategyRecipe(
+                    .emaFastSlow(fastPeriod: 12, slowPeriod: 26, atrPeriod: 14, atrStopMultiplier: 2.0),
+                    candles: candles
+                )
+                ```
+            }
+
+            @Step {
+                Build a compact summary:
+
+                ```swift
+                let summary = manager.runStrategyRecipeSummary(
+                    .rsi2MeanReversion(trendPeriod: 200, entryThreshold: 10, exitThreshold: 60),
+                    symbol: "AAPL",
+                    candles: candles
+                )
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Build reports and advanced metrics") {
+        @Steps {
+            @Step {
+                Turn a result into report-oriented outputs:
+
+                ```swift
+                let snapshot = manager.buildReportSnapshot(from: result, candles: candles)
+                let metrics = manager.buildAdvancedPerformanceMetrics(from: result, candles: candles)
+                ```
+            }
+        }
+    }
+}

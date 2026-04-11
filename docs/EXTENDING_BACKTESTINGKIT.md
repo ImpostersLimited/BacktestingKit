@@ -12,8 +12,9 @@ Implement `BKRawCsvProvider`:
 
 ```swift
 struct MyCsvProvider: BKRawCsvProvider {
-    func getRawCsv(ticker: String, p1: Double, p2: Double) async throws -> String {
+    func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error> {
         // Return CSV text in required schema/order.
+        .success(csv)
     }
 }
 ```

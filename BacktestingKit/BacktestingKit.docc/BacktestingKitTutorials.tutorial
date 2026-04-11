@@ -1,10 +1,20 @@
 @Tutorials(name: "BacktestingKit Tutorials") {
     @Intro(title: "Build with BacktestingKit") {
-        Learn the canonical flows for running v3 and v2 simulations, plus offline demo validation.
+        Start with the beginner onboarding path, then move into the canonical flows for running v3 and v2 simulations, helper workflows, manager recipes, and tooling utilities.
+    }
+
+    @Chapter(name: "Onboarding") {
+        @TutorialReference(tutorial: "doc:BKPackageOnboardingTutorial")
+        @TutorialReference(tutorial: "doc:BKInstallAndFirstSuccessTutorial")
+        @TutorialReference(tutorial: "doc:BKCSVImportTutorial")
+        @TutorialReference(tutorial: "doc:BKAppIntegrationTutorial")
     }
 
     @Chapter(name: "Core Flows") {
         @TutorialReference(tutorial: "doc:BKFirstBacktestTutorial")
         @TutorialReference(tutorial: "doc:BKV2V3OneLinerTutorial")
+        @TutorialReference(tutorial: "doc:BKHelperWorkflowTutorial")
+        @TutorialReference(tutorial: "doc:BKManagerWorkflowTutorial")
+        @TutorialReference(tutorial: "doc:BKToolsWorkflowTutorial")
     }
 }

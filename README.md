@@ -48,6 +48,62 @@ if case .success(let bars) = parseResult {
 }
 ```
 
+Choose your path:
+
+- Beginner onboarding: `docs/ONBOARDING.md`
+- Beginner app facade: `BKAppFacade`
+- App-side CSV import/validation:
+  - Import-review path: `BKAppFacade.buildCSVImportScreenState(...)`
+  - Confirmed execution handoff: `BKAppFacade.runConfirmedCSVImport(...)`
+  - Developer diagnostics path: `BKAppFacade.diagnoseCSVImport(...)`
+  - Manual settings path: `BKAppFacade.inspectCSV(...)`, `previewCSV(...)`, `validateCSVImport(...)`, `normalizeCSVImport(...)`, `runCSVImport(...)`
+  - Auto-inference path: `BKAppFacade.detectCSVImportSettings(...)`, `previewCSVAuto(...)`, `validateCSVImportAuto(...)`, `normalizeCSVImportAuto(...)`, `runCSVImportAuto(...)`
+- Surface guide: `docs/CHOOSE_YOUR_SURFACE.md`
+- Offline first run: `BKEngine.runDemo(...)`
+- Inline CSV helper flow: `BKEngine.runDemoCSV(...)`, `runV2CSV(...)`, `runV3CSV(...)`
+- Canonical app integration: `BKEngine.runV2(...)`, `BKEngine.runV3(...)`
+- Candle-first manager workflows: `BacktestingKitManager`
+- Validation/export/comparison/parity tools: `BKValidationTool`, `BKExportTool`, `BKComparisonTool`, `BKParityTool`
+
+App-facing facade example:
+
+```swift
+let report = BKAppFacade.runPresetCSVAndExportMarkdown(
+    symbol: "AAPL",
+    csv: csv,
+    preset: .smaCrossover
+)
+
+let importScreen = BKAppFacade.buildCSVImportScreenState(
+    symbol: "AAPL",
+    csv: csv,
+    maxRows: 5
+)
+
+let confirmedRun = BKAppFacade.runConfirmedCSVImport(
+    from: importScreen,
+    csv: csv,
+    preset: .smaCrossover
+)
+
+let importDiagnostics = BKAppFacade.diagnoseCSVImport(
+    symbol: "AAPL",
+    csv: csv
+)
+
+let importPreview = BKAppFacade.previewCSV(
+    symbol: "AAPL",
+    csv: csv,
+    maxRows: 5
+)
+
+let importAuto = BKAppFacade.runCSVImportAuto(
+    symbol: "AAPL",
+    csv: csv,
+    preset: .smaCrossover
+)
+```
+
 Canonical engine entrypoint:
 
 ```swift
@@ -78,6 +134,64 @@ let mapping = BKCSVColumnMapping(
 )
 
 let barsResult = csvToBars(csv, reverse: false, columnMapping: mapping)
+```
+
+Fastest CSV-backed workflow:
+
+```swift
+let csv = """
+timestamp,open,high,low,close,volume
+2024-01-01,100,101,99,100.5,1000000
+2024-01-02,100.5,102,100,101.5,1100000
+"""
+
+let result = BKEngine.runDemoCSV(symbol: "DEMO", csv: csv)
+```
+
+Bundled preset smoke workflow:
+
+```swift
+let summary = BKQuickDemo.runBundledPresetDemo(
+    dataset: .aapl,
+    preset: .smaCrossover
+)
+
+let matrix = BKQuickDemo.runBundledSmokeMatrix(
+    datasets: [.aapl, .msft, .nvda],
+    preset: .emaMeanReversion
+)
+```
+
+Manager helper workflow:
+
+```swift
+let manager = BacktestingKitManager()
+let trend = manager.applyTrendIndicatorBundle(
+    candles: candles,
+    smaPeriods: [5, 20],
+    emaPeriods: [12, 26],
+    keyNamespace: "screen"
+)
+
+let summary = manager.runSMACrossoverSummary(
+    symbol: "AAPL",
+    candles: candles,
+    fast: 5,
+    slow: 20
+)
+```
+
+Tool workflow example:
+
+```swift
+let preflight = BKValidationTool.preflightCSV(csv, symbol: "AAPL")
+let collector = BKDiagnosticsCollector()
+await collector.emit(kind: .simulationStarted, stage: "simulation", message: "Running scenario")
+let diagnostics = await collector.summarizedSnapshot()
+let exported = BKScenarioTool.runExportBundle(
+    config: BKScenarioConfig(symbol: "SCENARIO"),
+    diagnostics: diagnostics
+)
 ```
 
 ## Trial / Parity Run
@@ -171,8 +285,15 @@ let result = await BKEngine.runV2(
 
 ## Detailed Docs
 
+- `docs/ONBOARDING.md`
+- `docs/PACKAGE_USAGE_GUIDE.md`
 - `docs/GETTING_STARTED.md`
+- `docs/INDEX.md`
+- `docs/HELPER_WORKFLOWS.md`
+- `docs/ENGINE_GUIDE.md`
 - `docs/DATA_INGESTION.md`
+- `docs/INDICATORS_STRATEGIES_METRICS.md`
+- `docs/TOOLS.md`
 - `docs/PARITY_TESTING.md`
 - `docs/AGENTIC_USAGE.md`
 - `docs/OPEN_SOURCE_MAINTAINERS.md`

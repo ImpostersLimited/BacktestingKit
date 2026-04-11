@@ -270,6 +270,296 @@ final class BacktestingKitOneLinerTests: XCTestCase {
     }
 }
 
+final class BacktestingKitHelperWorkflowTests: XCTestCase {
+    private actor EmptyStore: BKV3DataStore {
+        func getConfigs(instrumentID: String) async -> Result<[BKV3_Config], Error> { .success([]) }
+        func getSimulationRules(configID: String, ruleType: String) async -> Result<[BKV3_SimulationRule], Error> { .success([]) }
+        func saveConfig(_ config: BKV3_Config) async -> Result<Void, Error> { .success(()) }
+        func saveAnalysis(_ analysis: BKV3_AnalysisProfile) async -> Result<Void, Error> { .success(()) }
+        func saveTrades(_ trades: [BKV3_TradeEntry]) async -> Result<Void, Error> { .success(()) }
+        func saveSimulationRules(_ rules: [BKV3_SimulationRule]) async -> Result<Void, Error> { .success(()) }
+        func saveRisks(_ risks: [BKV3_RiskProfile]) async -> Result<Void, Error> { .success(()) }
+    }
+
+    private let inlineCsv = """
+    timestamp,open,high,low,close,volume
+    2024-01-01,10,11,9,10.5,100
+    2024-01-02,10.5,11.5,10,11,120
+    2024-01-03,11,12,10.8,11.8,140
+    2024-01-04,11.8,12.2,11.3,12,130
+    2024-01-05,12,12.4,11.9,12.2,125
+    """
+
+    func testRunHeadlineMetricsExtractsBacktestValues() {
+        let result = BacktestResult(
+            trades: [],
+            totalReturn: 0.12,
+            annualizedReturn: 0.18,
+            winRate: 0.6,
+            maxDrawdown: -0.08,
+            sharpeRatio: 1.4,
+            avgTradeReturn: 0.02,
+            numTrades: 5,
+            numWins: 3,
+            numLosses: 2,
+            profitFactor: 1.8,
+            expectancy: 0.01,
+            cagr: 0.17,
+            volatility: 0.22,
+            sortinoRatio: 1.9,
+            calmarRatio: 1.5,
+            avgHoldingPeriod: 4,
+            maxConsecutiveWins: 2,
+            maxConsecutiveLosses: 1,
+            avgWin: 0.04,
+            avgLoss: -0.02,
+            kellyCriterion: 0.15,
+            ulcerIndex: 0.03
+        )
+
+        let metrics = BKRunHeadlineMetrics(result: result)
+        XCTAssertEqual(metrics.tradeCount, 5)
+        XCTAssertEqual(metrics.winRate, 0.6)
+        XCTAssertEqual(metrics.totalReturn, 0.12)
+        XCTAssertEqual(metrics.annualizedReturn, 0.18)
+        XCTAssertEqual(metrics.maxDrawdown, -0.08)
+        XCTAssertEqual(metrics.sharpeRatio, 1.4)
+        XCTAssertEqual(metrics.profitFactor, 1.8)
+    }
+
+    func testRunSummarySupportsCodableRoundTrip() throws {
+        let summary = BKRunSummary(
+            symbol: "AAPL",
+            barCount: 42,
+            startDate: Date(timeIntervalSince1970: 0),
+            endDate: Date(timeIntervalSince1970: 86_400),
+            metrics: BKRunHeadlineMetrics(
+                tradeCount: 3,
+                winRate: 0.5,
+                totalReturn: 0.1,
+                annualizedReturn: 0.12,
+                maxDrawdown: -0.03,
+                sharpeRatio: 1.1,
+                profitFactor: 1.6
+            )
+        )
+
+        let data = try JSONEncoder().encode(summary)
+        let decoded = try JSONDecoder().decode(BKRunSummary.self, from: data)
+        XCTAssertEqual(decoded, summary)
+    }
+
+    func testEngineSummarizeUsesBarRangeAndMetrics() {
+        guard case .success(let bars) = csvToBars(inlineCsv, reverse: false) else {
+            XCTFail("Expected CSV parsing success")
+            return
+        }
+        let candles = bars.map {
+            Candlestick(
+                date: $0.time,
+                open: $0.open,
+                high: $0.high,
+                low: $0.low,
+                close: $0.close,
+                volume: $0.volume
+            )
+        }
+
+        let manager = BacktestingKitManager()
+        let result = manager.backtestSMACrossover(candles: candles, fast: 2, slow: 3)
+        let summary = BKEngine.summarize(symbol: "AAPL", bars: bars, result: result)
+
+        XCTAssertEqual(summary.symbol, "AAPL")
+        XCTAssertEqual(summary.barCount, 5)
+        XCTAssertEqual(summary.startDate, bars.first?.time)
+        XCTAssertEqual(summary.endDate, bars.last?.time)
+        XCTAssertEqual(summary.metrics.tradeCount, result.numTrades)
+    }
+
+    func testEngineRunDemoCSVMatchesQuickDemoWorkflow() {
+        let engineResult = BKEngine.runDemoCSV(
+            symbol: "AAPL",
+            csv: inlineCsv,
+            fast: 2,
+            slow: 3,
+            log: { _ in }
+        )
+        let directResult = BKQuickDemo.runSMACrossoverDemo(
+            symbol: "AAPL",
+            csv: inlineCsv,
+            fast: 2,
+            slow: 3,
+            log: { _ in }
+        )
+
+        switch (engineResult, directResult) {
+        case (.success(let engineSummary), .success(let directSummary)):
+            XCTAssertEqual(engineSummary.symbol, directSummary.symbol)
+            XCTAssertEqual(engineSummary.barCount, directSummary.barCount)
+            XCTAssertEqual(engineSummary.dateRangeStart, directSummary.dateRangeStart)
+            XCTAssertEqual(engineSummary.dateRangeEnd, directSummary.dateRangeEnd)
+            XCTAssertEqual(engineSummary.result.numTrades, directSummary.result.numTrades)
+        default:
+            XCTFail("Expected both workflows to succeed")
+        }
+    }
+
+    func testEngineRunScenarioMatchesScenarioToolSummary() {
+        let config = BKScenarioConfig(symbol: "SCENARIO", barCount: 32, seed: 42, strategy: .emaFastSlow)
+
+        let engineSummary = BKEngine.runScenario(config: config)
+        let directSummary = BKScenarioTool.summarize(config: config)
+
+        XCTAssertEqual(engineSummary, directSummary)
+        XCTAssertEqual(engineSummary.symbol, "SCENARIO")
+        XCTAssertEqual(engineSummary.barCount, 32)
+    }
+
+    func testEngineRunPresetWrapsBundledPresetDemo() {
+        let engine = BKEngine.runPreset(dataset: .aapl, preset: .smaCrossover, log: { _ in })
+        let direct = BKQuickDemo.runBundledPresetDemo(dataset: .aapl, preset: .smaCrossover, log: { _ in })
+
+        switch (engine, direct) {
+        case (.success(let lhs), .success(let rhs)):
+            XCTAssertEqual(lhs, rhs)
+        default:
+            XCTFail("Expected bundled preset wrappers to succeed")
+        }
+    }
+
+    func testEngineRunPresetCSVBuildsSummaryFromInlineCsv() {
+        let result = BKEngine.runPresetCSV(
+            symbol: "AAPL",
+            csv: inlineCsv,
+            preset: .smaCrossover,
+            log: { _ in }
+        )
+
+        switch result {
+        case .success(let summary):
+            XCTAssertEqual(summary.symbol, "AAPL")
+            XCTAssertEqual(summary.barCount, 5)
+        case .failure(let error):
+            XCTFail("Expected preset CSV helper success, got \(error)")
+        }
+    }
+
+    func testEnginePreflightAndRunCSVReturnsStructuredSuccess() {
+        let report = BKEngine.preflightAndRunCSV(
+            symbol: "AAPL",
+            csv: inlineCsv,
+            preset: .smaCrossover,
+            log: { _ in }
+        )
+
+        XCTAssertTrue(report.isSuccessful)
+        XCTAssertTrue(report.preflight.isReady)
+        XCTAssertEqual(report.preflight.rowCount, 5)
+        XCTAssertEqual(report.summary?.symbol, "AAPL")
+        XCTAssertNil(report.failure)
+    }
+
+    func testEnginePreflightAndRunCSVReturnsStructuredFailure() {
+        let report = BKEngine.preflightAndRunCSV(
+            symbol: "AAPL",
+            csv: "",
+            preset: .smaCrossover,
+            log: { _ in }
+        )
+
+        XCTAssertFalse(report.isSuccessful)
+        XCTAssertFalse(report.preflight.isReady)
+        XCTAssertNotNil(report.failure)
+        XCTAssertEqual(report.failure?.stage, "csv-preflight")
+    }
+
+    func testEngineRunV2CSVUsesInlineProviderHelper() async {
+        var config = BKV2.SimulationPolicyConfig()
+        config.policy = .sma
+        config.entryRules = []
+        config.exitRules = []
+
+        let result = await BKEngine.runV2CSV(
+            instrumentID: "AAPL",
+            config: config,
+            csv: inlineCsv
+        )
+
+        switch result {
+        case .success(let payload):
+            XCTAssertGreaterThanOrEqual(payload.0.trades.count, 0)
+        case .failure(let failure):
+            XCTFail("Expected V2 CSV helper success, got \(failure)")
+        }
+    }
+
+    func testEngineRunV2ValidatedCSVBundlesValidationAndSuccess() async {
+        var config = BKV2.SimulationPolicyConfig()
+        config.policy = .sma
+        config.entryRules = []
+        config.exitRules = []
+
+        let report = await BKEngine.runV2ValidatedCSV(
+            instrumentID: "AAPL",
+            config: config,
+            csv: inlineCsv
+        )
+
+        XCTAssertTrue(report.isSuccessful)
+        XCTAssertTrue(report.preflight.isReady)
+        XCTAssertTrue(report.requestValidation.isValid)
+        XCTAssertNotNil(report.output)
+        XCTAssertNotNil(report.positionStatus)
+        XCTAssertNil(report.failure)
+    }
+
+    func testEngineRunV3CSVUsesInlineProviderHelper() async {
+        let instrument = BKV3_InstrumentInfo(id: "AAPL", name: nil, exchange: nil, quoteType: nil, createdAt: nil, lastUpdated: nil)
+        let result = await BKEngine.runV3CSV(
+            instrument: instrument,
+            dataStore: EmptyStore(),
+            csv: inlineCsv
+        )
+
+        switch result {
+        case .success(let report):
+            XCTAssertEqual(report.instrumentID, "AAPL")
+            XCTAssertEqual(report.configCountProcessed, 0)
+        case .failure(let failure):
+            XCTFail("Expected V3 CSV helper success, got \(failure)")
+        }
+    }
+
+    func testEngineRunV3ValidatedCSVBundlesValidationAndSuccess() async {
+        let instrument = BKV3_InstrumentInfo(id: "AAPL", name: nil, exchange: nil, quoteType: nil, createdAt: nil, lastUpdated: nil)
+        let report = await BKEngine.runV3ValidatedCSV(
+            instrument: instrument,
+            dataStore: EmptyStore(),
+            csv: inlineCsv
+        )
+
+        XCTAssertTrue(report.isSuccessful)
+        XCTAssertTrue(report.preflight.isReady)
+        XCTAssertTrue(report.requestValidation.isValid)
+        XCTAssertNotNil(report.report)
+        XCTAssertNil(report.failure)
+    }
+
+    func testEngineRunV3ValidatedCSVReturnsRequestValidationFailure() async {
+        let instrument = BKV3_InstrumentInfo(id: "   ", name: nil, exchange: nil, quoteType: nil, createdAt: nil, lastUpdated: nil)
+        let report = await BKEngine.runV3ValidatedCSV(
+            instrument: instrument,
+            dataStore: EmptyStore(),
+            csv: inlineCsv
+        )
+
+        XCTAssertFalse(report.isSuccessful)
+        XCTAssertTrue(report.preflight.isReady)
+        XCTAssertFalse(report.requestValidation.isValid)
+        XCTAssertEqual(report.failure?.stage, "request-validation")
+    }
+}
+
 final class BacktestingKitDemoTests: XCTestCase {
     func testQuickDemoReturnsSummaryForBundledDataset() {
         switch BKQuickDemo.runBundledSMACrossoverDemo(dataset: .aapl, log: { _ in }) {
@@ -286,7 +576,7 @@ final class BacktestingKitDemoTests: XCTestCase {
         let result = BKEngine.runDemo(dataset: .aapl, csv: "")
         let presentation = result.uiPresentation
         XCTAssertTrue(presentation.isError)
-        XCTAssertEqual(presentation.errorCode, "missing_header")
+        XCTAssertEqual(presentation.errorCode, "empty_csv")
         XCTAssertFalse(presentation.summary.isEmpty)
     }
 

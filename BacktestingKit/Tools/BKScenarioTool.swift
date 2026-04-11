@@ -1,13 +1,13 @@
 import Foundation
 
 /// Built-in deterministic strategy variants for generated scenario runs.
-public enum BKScenarioStrategy: String, Codable, Equatable {
+public enum BKScenarioStrategy: String, Codable, Equatable, Sendable {
     case smaCrossover
     case emaFastSlow
 }
 
 /// Configuration for a deterministic synthetic market scenario.
-public struct BKScenarioConfig: Codable, Equatable {
+public struct BKScenarioConfig: Codable, Equatable, Sendable {
     /// Logical symbol label used for reporting.
     public var symbol: String
     /// Number of generated bars.

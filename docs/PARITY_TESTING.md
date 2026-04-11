@@ -42,7 +42,7 @@ It requires this marker path to exist:
 ## Environment Caveats
 
 - Some macOS environments print noisy CoreSimulator/provisioning warnings during `xcodebuild`; these may be non-fatal.
-- The script sets `CLANG_MODULE_CACHE_PATH` to `/tmp/backtestingkit-module-cache` to avoid restricted cache path failures.
+- The script defaults `CLANG_MODULE_CACHE_PATH` to the repo-local `temp/parity/module-cache` directory to avoid restricted cache path failures.
 - JS runner uses direct `node` execution from a relative JavaScript engine checkout.
 
 ## Contributor Setup (Private JS Parity)

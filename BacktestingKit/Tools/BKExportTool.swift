@@ -78,6 +78,46 @@ public enum BKExportTool {
         }
         return .success(lines.joined(separator: "\n"))
     }
+
+    /// Encodes a structured preflight report and optional auxiliary payloads.
+    public static func exportPreflight(
+        _ report: BKToolPreflightReport,
+        trades: [BKTrade] = [],
+        prettyPrinted: Bool = true
+    ) -> Result<BKToolExportBundle, BKExportError> {
+        switch toJSON(report, prettyPrinted: prettyPrinted) {
+        case .failure(let error):
+            return .failure(error)
+        case .success(let preflightJSON):
+            let diagnosticsJSON: String?
+            switch toJSON(report.diagnostics, prettyPrinted: prettyPrinted) {
+            case .success(let output):
+                diagnosticsJSON = output
+            case .failure(let error):
+                return .failure(error)
+            }
+
+            let tradesCSV: String?
+            if trades.isEmpty {
+                tradesCSV = nil
+            } else {
+                switch tradesToCSV(trades) {
+                case .success(let output):
+                    tradesCSV = output
+                case .failure(let error):
+                    return .failure(error)
+                }
+            }
+
+            return .success(
+                BKToolExportBundle(
+                    preflightJSON: preflightJSON,
+                    diagnosticsJSON: diagnosticsJSON,
+                    tradesCSV: tradesCSV
+                )
+            )
+        }
+    }
 }
 
 private func bkEscapeCSVValue(_ value: String) -> String {

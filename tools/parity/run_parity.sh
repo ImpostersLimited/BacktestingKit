@@ -31,14 +31,16 @@ export JS_ENGINE_ROOT="$JS_ROOT"
 JS_OUT="$SCRIPT_DIR/js_output.json"
 SWIFT_OUT="$SCRIPT_DIR/swift_output.json"
 SWIFT_BIN="$SCRIPT_DIR/swift_runner_bin"
-DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/backtestingkit-derived}"
-MODULE_CACHE_PATH="${MODULE_CACHE_PATH:-/tmp/backtestingkit-module-cache}"
+PARITY_TEMP_ROOT="${PARITY_TEMP_ROOT:-$REPO_ROOT/temp/parity}"
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$PARITY_TEMP_ROOT/derived}"
+MODULE_CACHE_PATH="${MODULE_CACHE_PATH:-$PARITY_TEMP_ROOT/module-cache}"
+BUILD_LOG_PATH="${BUILD_LOG_PATH:-$PARITY_TEMP_ROOT/xcodebuild.log}"
 
-mkdir -p "$MODULE_CACHE_PATH"
+mkdir -p "$DERIVED_DATA_PATH" "$MODULE_CACHE_PATH" "$(dirname "$BUILD_LOG_PATH")"
 export CLANG_MODULE_CACHE_PATH="$MODULE_CACHE_PATH"
 
 pushd "$REPO_ROOT" >/dev/null
-xcodebuild -scheme BacktestingKit -project BacktestingKit.xcodeproj -configuration Debug -derivedDataPath "$DERIVED_DATA_PATH" CODE_SIGNING_ALLOWED=NO build >/tmp/backtestingkit_parity_build.log
+xcodebuild -scheme BacktestingKit -project BacktestingKit.xcodeproj -configuration Debug -derivedDataPath "$DERIVED_DATA_PATH" CODE_SIGNING_ALLOWED=NO build >"$BUILD_LOG_PATH"
 popd >/dev/null
 
 cd "$JS_ROOT"

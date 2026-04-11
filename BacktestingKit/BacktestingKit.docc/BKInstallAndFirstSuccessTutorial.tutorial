@@ -1,0 +1,51 @@
+@Tutorial(time: 10) {
+    @Intro(title: "Build and Run Your First Success") {
+        Use the smallest possible path to confirm that BacktestingKit builds and can complete a backtest offline.
+    }
+
+    @Section(title: "Build the package") {
+        @Steps {
+            @Step {
+                Run:
+
+                ```bash
+                swift build
+                ```
+            }
+        }
+    }
+
+    @Section(title: "Run the bundled demo") {
+        @Steps {
+            @Step {
+                Import the package:
+
+                ```swift
+                import BacktestingKit
+                ```
+            }
+
+            @Step {
+                Run the offline demo:
+
+                ```swift
+                let result = BKEngine.runDemo(dataset: .aapl)
+                ```
+            }
+
+            @Step {
+                Inspect success or failure:
+
+                ```swift
+                switch result {
+                case .success(let summary):
+                    print(summary.symbol)
+                    print(summary.result.totalReturn)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+                ```
+            }
+        }
+    }
+}
