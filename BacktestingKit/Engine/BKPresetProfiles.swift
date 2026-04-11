@@ -1,7 +1,10 @@
 import Foundation
 
+/// Reusable execution-model bundle combining slippage and commission assumptions.
 public struct BKExecutionPresetProfile {
+    /// Slippage model associated with this value.
     public let slippageModel: BKSlippageModel
+    /// Commission model associated with this value.
     public let commissionModel: BKCommissionModel
 
     /// Creates a custom execution profile.
@@ -27,6 +30,7 @@ public extension BKExecutionPresetProfile {
 
 /// Wrapper for reusable position-sizing model profiles.
 public struct BKPositionSizingPresetProfile {
+    /// Sizing model associated with this value.
     public let sizingModel: BKPositionSizingModel
 
     /// Creates a custom position-sizing profile.
@@ -62,9 +66,13 @@ public extension BKPositionSizingPresetProfile {
 
 /// Prebuilt stop/risk policy bundles for strategy-level composition.
 public struct BKRiskControlPresetProfile {
+    /// ATR period associated with this value.
     public let atrPeriod: Int
+    /// ATR stop multiplier associated with this value.
     public let atrStopMultiplier: Double
+    /// Whether to use trailing stop.
     public let useTrailingStop: Bool
+    /// Maximum holding bars associated with this value.
     public let maxHoldingBars: Int?
 
     /// Creates a new instance.
@@ -95,9 +103,13 @@ public extension BKRiskControlPresetProfile {
 
 /// Evaluation preset bundle for walk-forward and stability-oriented runs.
 public struct BKEvaluationPresetProfile {
+    /// Walk forward folds associated with this value.
     public let walkForwardFolds: Int
+    /// In sample ratio associated with this value.
     public let inSampleRatio: Double
+    /// Whether to include out of sample stability score.
     public let includeOutOfSampleStabilityScore: Bool
+    /// Bootstrap runs associated with this value.
     public let bootstrapRuns: Int
 
     /// Creates a new instance.

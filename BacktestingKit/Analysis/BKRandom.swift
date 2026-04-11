@@ -1,5 +1,6 @@
 import Foundation
 
+/// Deterministic pseudo-random number generator used by optimization helpers.
 public final class Random {
     private var state: UInt64
 

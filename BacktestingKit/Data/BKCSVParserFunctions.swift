@@ -1,5 +1,13 @@
 import Foundation
 
+/// Parses a CSV payload into chronological `BKBar` values using the package defaults.
+///
+/// - Parameters:
+///   - csv: Raw CSV payload to decode.
+///   - dateFormat: Reserved for compatibility with older call sites. ISO-8601 parsing is used.
+///   - reverse: When `true`, returns bars in reverse chronological order for legacy workflows.
+///   - columnMapping: Optional column-name overrides for non-standard CSV headers.
+/// - Returns: Parsed bars or a `BKCSVParsingError` describing the first failure encountered.
 public func csvToBars(
     _ csv: String,
     dateFormat: String = "yyyy-MM-dd",

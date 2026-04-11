@@ -13,6 +13,7 @@ public enum BKQuickDemoDataset: String, CaseIterable, Sendable {
     case wmt = "WMT_10Y_1D"
     case ko = "KO_10Y_1D"
 
+    /// Ticker symbol associated with this value.
     public var symbol: String {
         switch self {
         case .aapl: return "AAPL"
@@ -28,6 +29,7 @@ public enum BKQuickDemoDataset: String, CaseIterable, Sendable {
         }
     }
 
+    /// Exchange code associated with this value.
     public var exchange: String {
         switch self {
         case .aapl, .msft, .googl, .nvda, .tsla, .amzn:
@@ -44,6 +46,7 @@ public enum BKQuickDemoError: LocalizedError {
     case emptyCSV
     case unsupportedPreset(BKPresetCatalog)
 
+    /// Localized description of the error.
     public var errorDescription: String? {
         switch self {
         case .missingBundledCSV(let dataset):
@@ -58,10 +61,15 @@ public enum BKQuickDemoError: LocalizedError {
 
 /// Represents `BKQuickDemoSummary` in the BacktestingKit public API.
 public struct BKQuickDemoSummary {
+    /// Ticker symbol associated with this value.
     public let symbol: String
+    /// Number of bars represented by this value.
     public let barCount: Int
+    /// Start of the date range represented by this summary.
     public let dateRangeStart: Date
+    /// End of the date range represented by this summary.
     public let dateRangeEnd: Date
+    /// Result associated with this value.
     public let result: BacktestResult
 
     /// Creates a new instance.
@@ -157,6 +165,12 @@ public enum BKQuickDemo {
 
     /// One-line quick demo for Playground/SPM users.
     /// Runs bundled 10y/1d SMA crossover (5/20) from bundled CSV (offline).
+    ///
+    /// - Parameters:
+    ///   - dataset: Bundled sample dataset to load when inline CSV is not provided.
+    ///   - csv: Optional inline CSV override for the demo input.
+    ///   - log: Callback that receives progress messages as the demo runs.
+    /// - Returns: A result containing the quick-demo summary or the error that stopped the demo.
     @discardableResult
     public static func runBundledSMACrossoverDemo(
         dataset: BKQuickDemoDataset = .aapl,
@@ -222,7 +236,15 @@ public enum BKQuickDemo {
         ))
     }
 
-    /// Runs an SMA crossover workflow directly from inline CSV.
+    /// Runs an SMA crossover workflow directly from inline CSV input.
+    ///
+    /// - Parameters:
+    ///   - symbol: Symbol to associate with the inline dataset.
+    ///   - csv: CSV payload containing OHLCV rows for the demo.
+    ///   - fast: Fast SMA window length.
+    ///   - slow: Slow SMA window length.
+    ///   - log: Callback that receives progress messages as the demo runs.
+    /// - Returns: A result containing the quick-demo summary or the error that stopped the demo.
     @discardableResult
     public static func runSMACrossoverDemo(
         symbol: String,
@@ -261,6 +283,12 @@ public enum BKQuickDemo {
         )
     }
 
+    /// Runs the default bundled AAPL 10Y/1D SMA crossover demo.
+    ///
+    /// - Parameters:
+    ///   - csv: Optional inline CSV override for the bundled demo input.
+    ///   - log: Callback that receives progress messages as the demo runs.
+    /// - Returns: A result containing the quick-demo summary or the error that stopped the demo.
     @discardableResult
     public static func runAAPL10Y1DSMACrossover(
         csv: String? = nil,

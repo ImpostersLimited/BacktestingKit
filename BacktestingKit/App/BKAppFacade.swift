@@ -838,7 +838,7 @@ public enum BKAppFacade {
         )
     }
 
-    /// Throws when two summaries are not equivalent within the supplied tolerance.
+    /// Throws when two run summaries are not equivalent within the supplied tolerance.
     @discardableResult
     public static func assertEquivalent(
         baseline: BKRunSummary,

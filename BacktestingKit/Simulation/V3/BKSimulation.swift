@@ -2,8 +2,11 @@ import Foundation
 
 /// Represents `V3SimulateConfigOutput` in the BacktestingKit public API.
 public struct V3SimulateConfigOutput: Codable, Equatable {
+    /// Analysis associated with this value.
     public var analysis: BKAnalysis
+    /// Trades associated with this value.
     public var trades: [BKTrade]
+    /// Configuration associated with this value.
     public var config: BKV3_Config
 
     /// Creates a new instance.

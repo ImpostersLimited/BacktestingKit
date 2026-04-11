@@ -2,8 +2,11 @@ import Foundation
 
 /// UI presentation mapping for top-level engine failures.
 extension BKEngineFailure: BKUserPresentableError {
+    /// Short title used when presenting this value to people.
     public var uiTitle: String { "Simulation Error" }
+    /// One-line summary used when presenting this value to people.
     public var uiSummary: String { message }
+    /// Detailed description used when presenting this value to people.
     public var uiDescription: String {
         var parts: [String] = []
         parts.append("[\(code.rawValue)] stage=\(stage)")
@@ -13,6 +16,7 @@ extension BKEngineFailure: BKUserPresentableError {
         }
         return parts.joined(separator: " | ")
     }
+    /// Structured metadata associated with this value.
     public var uiMetadata: [String: String] {
         var base: [String: String] = [
             "instrumentID": instrumentID,
@@ -26,18 +30,25 @@ extension BKEngineFailure: BKUserPresentableError {
         }
         return base
     }
+    /// Stable error code used for presentation and diagnostics.
     public var uiErrorCode: String { code.rawValue }
+    /// Whether the operation can be retried safely.
     public var uiRetryable: Bool { isRetryable }
 }
 
 /// UI presentation mapping for CSV parsing failures.
 extension BKCSVParsingError: BKUserPresentableError {
+    /// Short title used when presenting this value to people.
     public var uiTitle: String { "CSV Parsing Error" }
+    /// One-line summary used when presenting this value to people.
     public var uiSummary: String { errorDescription ?? String(describing: self) }
+    /// Detailed description used when presenting this value to people.
     public var uiDescription: String { uiSummary }
+    /// Structured metadata associated with this value.
     public var uiMetadata: [String: String] {
         ["kind": String(describing: self)]
     }
+    /// Stable error code used for presentation and diagnostics.
     public var uiErrorCode: String {
         switch self {
         case .missingHeader: return "missing_header"
@@ -53,10 +64,15 @@ extension BKCSVParsingError: BKUserPresentableError {
 
 /// UI presentation mapping for AlphaVantage provider failures.
 extension AlphaVantageClientError: BKUserPresentableError {
+    /// Short title used when presenting this value to people.
     public var uiTitle: String { "Data Provider Error" }
+    /// One-line summary used when presenting this value to people.
     public var uiSummary: String { errorDescription ?? String(describing: self) }
+    /// Detailed description used when presenting this value to people.
     public var uiDescription: String { uiSummary }
+    /// Structured metadata associated with this value.
     public var uiMetadata: [String: String] { ["provider": "alphavantage"] }
+    /// Stable error code used for presentation and diagnostics.
     public var uiErrorCode: String {
         switch self {
         case .invalidTicker: return "invalid_ticker"
@@ -69,6 +85,7 @@ extension AlphaVantageClientError: BKUserPresentableError {
         case .emptyResponse: return "empty_response"
         }
     }
+    /// Whether the operation can be retried safely.
     public var uiRetryable: Bool {
         switch self {
         case .throttled, .badStatusCode:
@@ -81,10 +98,15 @@ extension AlphaVantageClientError: BKUserPresentableError {
 
 /// UI presentation mapping for quick demo failures.
 extension BKQuickDemoError: BKUserPresentableError {
+    /// Short title used when presenting this value to people.
     public var uiTitle: String { "Demo Error" }
+    /// One-line summary used when presenting this value to people.
     public var uiSummary: String { errorDescription ?? String(describing: self) }
+    /// Detailed description used when presenting this value to people.
     public var uiDescription: String { uiSummary }
+    /// Structured metadata associated with this value.
     public var uiMetadata: [String: String] { ["surface": "quick_demo"] }
+    /// Stable error code used for presentation and diagnostics.
     public var uiErrorCode: String {
         switch self {
         case .missingBundledCSV: return "missing_bundled_csv"
@@ -96,10 +118,15 @@ extension BKQuickDemoError: BKUserPresentableError {
 
 /// UI presentation mapping for simulation input/runtime validation failures.
 extension BKSimulationDriverError: BKUserPresentableError {
+    /// Short title used when presenting this value to people.
     public var uiTitle: String { "Simulation Input Error" }
+    /// One-line summary used when presenting this value to people.
     public var uiSummary: String { errorDescription ?? String(describing: self) }
+    /// Detailed description used when presenting this value to people.
     public var uiDescription: String { uiSummary }
+    /// Structured metadata associated with this value.
     public var uiMetadata: [String: String] { ["source": "driver"] }
+    /// Stable error code used for presentation and diagnostics.
     public var uiErrorCode: String {
         switch self {
         case .emptyInstrumentID: return "empty_instrument_id"

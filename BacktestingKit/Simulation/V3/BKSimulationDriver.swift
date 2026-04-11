@@ -9,6 +9,7 @@ public enum BKSimulationDriverError: LocalizedError, Equatable {
     case emptyBars(String)
     case invalidConcurrency(Int)
 
+    /// Localized description of the error.
     public var errorDescription: String? {
         switch self {
         case .emptyInstrumentID:
@@ -33,7 +34,9 @@ public enum BKEngineErrorCode: String, Codable, Equatable {
 
 /// Represents `BKSimulationRunFailure` in the BacktestingKit public API.
 public struct BKSimulationRunFailure: Error, Equatable {
+    /// Identifier associated with this value.
     public var instrumentID: String
+    /// Human-readable message associated with this value.
     public var message: String
 
     /// Creates a new instance.
@@ -45,13 +48,21 @@ public struct BKSimulationRunFailure: Error, Equatable {
 
 /// Represents `BKEngineFailure` in the BacktestingKit public API.
 public struct BKEngineFailure: Error, Equatable, Codable {
+    /// Identifier associated with this value.
     public var instrumentID: String
+    /// Machine-readable code associated with this value.
     public var code: BKEngineErrorCode
+    /// Current processing stage associated with this value.
     public var stage: String
+    /// Human-readable message associated with this value.
     public var message: String
+    /// Whether is retryable.
     public var isRetryable: Bool
+    /// Timestamp associated with this value.
     public var timestamp: Date
+    /// Additional metadata associated with this value.
     public var metadata: [String: String]
+    /// Recovery suggestion associated with this value.
     public var recoverySuggestion: String?
 
     /// Creates a new instance.
@@ -78,10 +89,15 @@ public struct BKEngineFailure: Error, Equatable, Codable {
 
 /// Represents `BKSimulationBatchOptions` in the BacktestingKit public API.
 public struct BKSimulationBatchOptions: Equatable, Codable {
+    /// Maximum concurrency associated with this value.
     public var maxConcurrency: Int
+    /// Continue on failure associated with this value.
     public var continueOnFailure: Bool
+    /// Whether to use streaming CSV parser.
     public var useStreamingCsvParser: Bool
+    /// Strict CSV parsing associated with this value.
     public var strictCsvParsing: Bool
+    /// CSV column mapping associated with this value.
     public var csvColumnMapping: BKCSVColumnMapping?
 
     /// Creates a new instance.
@@ -102,11 +118,17 @@ public struct BKSimulationBatchOptions: Equatable, Codable {
 
 /// Represents `BKSimulationBatchReport` in the BacktestingKit public API.
 public struct BKSimulationBatchReport: Equatable, Codable {
+    /// Total instruments represented by this value.
     public var totalInstruments: Int
+    /// Succeeded associated with this value.
     public var succeeded: Int
+    /// Failed associated with this value.
     public var failed: Int
+    /// Elapsed ms associated with this value.
     public var elapsedMS: Double
+    /// Memory delta bytes associated with this value.
     public var memoryDeltaBytes: UInt64?
+    /// Failures associated with this value.
     public var failures: [BKEngineFailure]
 
     /// Creates a new instance.
@@ -136,8 +158,11 @@ public enum BKCSVParserMode: String, Codable, Equatable {
 
 /// Represents `BKSimulationExecutionOptions` in the BacktestingKit public API.
 public struct BKSimulationExecutionOptions: Equatable, Codable {
+    /// Parser mode associated with this value.
     public var parserMode: BKCSVParserMode
+    /// Maximum bars per instrument associated with this value.
     public var maxBarsPerInstrument: Int?
+    /// CSV column mapping associated with this value.
     public var csvColumnMapping: BKCSVColumnMapping?
 
     /// Creates a new instance.
@@ -154,10 +179,15 @@ public struct BKSimulationExecutionOptions: Equatable, Codable {
 
 /// Represents `BKSimulationInstrumentReport` in the BacktestingKit public API.
 public struct BKSimulationInstrumentReport: Equatable, Codable {
+    /// Identifier associated with this value.
     public var instrumentID: String
+    /// Elapsed ms associated with this value.
     public var elapsedMS: Double
+    /// Configuration associated with this value.
     public var configCountProcessed: Int
+    /// Number of trades represented by this value.
     public var tradeCount: Int
+    /// Risk point count represented by this value.
     public var riskPointCount: Int
 
     /// Creates a new instance.
@@ -178,10 +208,15 @@ public struct BKSimulationInstrumentReport: Equatable, Codable {
 
 /// Represents `BKSimulationProgress` in the BacktestingKit public API.
 public struct BKSimulationProgress: Equatable, Codable {
+    /// Completed associated with this value.
     public var completed: Int
+    /// Total associated with this value.
     public var total: Int
+    /// Succeeded associated with this value.
     public var succeeded: Int
+    /// Failed associated with this value.
     public var failed: Int
+    /// Identifier associated with this value.
     public var lastInstrumentID: String
 
     /// Creates a new instance.
@@ -202,7 +237,9 @@ public struct BKSimulationProgress: Equatable, Codable {
 
 /// Represents `BKSimulationBatchDetailedReport` in the BacktestingKit public API.
 public struct BKSimulationBatchDetailedReport: Equatable, Codable {
+    /// High-level summary associated with this value.
     public var summary: BKSimulationBatchReport
+    /// Instrument reports associated with this value.
     public var instrumentReports: [BKSimulationInstrumentReport]
 
     /// Creates a new instance.
@@ -214,7 +251,9 @@ public struct BKSimulationBatchDetailedReport: Equatable, Codable {
 
 /// Represents `BKSimulationBatchRunHandle` in the BacktestingKit public API.
 public struct BKSimulationBatchRunHandle {
+    /// Progress updates emitted while the batch run is active.
     public var progressStream: AsyncStream<BKSimulationProgress>
+    /// Task that resolves to the final batch report.
     public var resultTask: Task<BKSimulationBatchDetailedReport, Never>
 
     /// Creates a new instance.
@@ -227,6 +266,7 @@ public struct BKSimulationBatchRunHandle {
     }
 }
 
+/// Default v3 simulation driver that coordinates data loading, parsing, and persistence.
 public final class BKSimulationDriver: BKV3SimulationDriving {
     private let dataStore: BKV3DataStore
     private let csvProvider: BKRawCsvProvider

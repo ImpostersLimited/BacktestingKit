@@ -1,5 +1,6 @@
 import Foundation
 
+/// Adapter that runs legacy v2 simulations from a `BKRawCsvProvider`.
 public final class BKV2SimulationDriver: BKV2SimulationDriving {
     private let csvProvider: BKRawCsvProvider
     private let barParser: any BKBarParsing

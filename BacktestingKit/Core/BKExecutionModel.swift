@@ -22,6 +22,7 @@ public struct BKNoSlippageModel: BKSlippageModel {
 
 /// Represents `BKFixedBpsSlippageModel` in the BacktestingKit public API.
 public struct BKFixedBpsSlippageModel: BKSlippageModel {
+    /// Bps associated with this value.
     public let bps: Double
 
     /// Creates a new instance.
@@ -46,7 +47,9 @@ public struct BKNoCommissionModel: BKCommissionModel {
 
 /// Represents `BKFixedPlusPercentCommissionModel` in the BacktestingKit public API.
 public struct BKFixedPlusPercentCommissionModel: BKCommissionModel {
+    /// Fixed per order associated with this value.
     public let fixedPerOrder: Double
+    /// Percent of notional associated with this value.
     public let percentOfNotional: Double
 
     /// Creates a new instance.
@@ -63,13 +66,21 @@ public struct BKFixedPlusPercentCommissionModel: BKCommissionModel {
 
 /// Represents `BKExecutionAdjustedTrade` in the BacktestingKit public API.
 public struct BKExecutionAdjustedTrade: Equatable, Codable {
+    /// Entry date associated with this value.
     public let entryDate: Date
+    /// Exit date associated with this value.
     public let exitDate: Date
+    /// Entry price associated with this value.
     public let entryPrice: Double
+    /// Exit price associated with this value.
     public let exitPrice: Double
+    /// Quantity associated with this value.
     public let quantity: Double
+    /// Gross pnl associated with this value.
     public let grossPnl: Double
+    /// Net pnl associated with this value.
     public let netPnl: Double
+    /// Commissions associated with this value.
     public let commissions: Double
 
     /// Creates a new instance.

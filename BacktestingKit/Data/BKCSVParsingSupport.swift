@@ -54,6 +54,7 @@ public enum AlphaVantageClientError: LocalizedError, Equatable {
     case apiError(String)
     case emptyResponse
 
+    /// Localized description of the error.
     public var errorDescription: String? {
         switch self {
         case .invalidTicker:
@@ -86,6 +87,7 @@ public enum BKCSVParsingError: LocalizedError, Equatable {
     case invalidNumeric(value: String, line: Int)
     case nonChronologicalDate(previous: String, current: String, line: Int)
 
+    /// Localized description of the error.
     public var errorDescription: String? {
         switch self {
         case .missingHeader:
@@ -108,12 +110,19 @@ public enum BKCSVParsingError: LocalizedError, Equatable {
 
 /// Represents `BKCSVColumnMapping` in the BacktestingKit public API.
 public struct BKCSVColumnMapping: Equatable, Codable, Sendable {
+    /// Date associated with this value.
     public var date: String
+    /// Open price for the bar.
     public var open: String
+    /// High price for the bar.
     public var high: String
+    /// Low price for the bar.
     public var low: String
+    /// Close price for the bar.
     public var close: String
+    /// Adjusted close price for the bar when available.
     public var adjustedClose: String?
+    /// Trading volume for the bar.
     public var volume: String
 
     /// Creates a new instance.
