@@ -112,6 +112,31 @@ public struct BKRunExportBundle: Codable, Equatable, Sendable {
     }
 }
 
+/// Export-ready payloads for additive portfolio runs.
+public struct BKPortfolioExportBundle: Codable, Equatable, Sendable {
+    /// Aggregate portfolio JSON associated with this value.
+    public var portfolioJSON: String
+    /// Sleeve allocation CSV associated with this value.
+    public var weightsCSV: String?
+    /// Failure payload JSON associated with this value.
+    public var failuresJSON: String?
+    /// Rebalance event payload JSON associated with this value.
+    public var rebalanceJSON: String?
+
+    /// Creates a new instance.
+    public init(
+        portfolioJSON: String,
+        weightsCSV: String? = nil,
+        failuresJSON: String? = nil,
+        rebalanceJSON: String? = nil
+    ) {
+        self.portfolioJSON = portfolioJSON
+        self.weightsCSV = weightsCSV
+        self.failuresJSON = failuresJSON
+        self.rebalanceJSON = rebalanceJSON
+    }
+}
+
 /// Metric-by-metric delta between two run summaries.
 public struct BKRunMetricDiff: Codable, Equatable, Sendable {
     /// Baseline associated with this value.

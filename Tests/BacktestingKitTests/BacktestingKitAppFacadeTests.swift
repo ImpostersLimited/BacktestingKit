@@ -452,6 +452,105 @@ final class BacktestingKitAppFacadeTests: XCTestCase {
         XCTAssertEqual(report.run.summary?.symbol, "AAPL")
     }
 
+    func testBuildPortfolioCSVImportScreenStateReturnsReadyWhenAllSleevesAreReady() {
+        let state = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "BASKET",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .smaCrossover, targetWeight: 0.6),
+                BKAppPortfolioImportItem(symbol: "MSFT", csv: inlineCsv, preset: .emaCrossover, targetWeight: 0.4),
+            ],
+            allocation: .sleeveWeights,
+            maxRows: 2
+        )
+
+        XCTAssertEqual(state.portfolioID, "BASKET")
+        XCTAssertEqual(state.status, .ready)
+        XCTAssertTrue(state.isReadyToContinue)
+        XCTAssertEqual(state.sleeves.count, 2)
+        XCTAssertEqual(state.sleeves.map(\.screenState.status), [.ready, .ready])
+        XCTAssertEqual(state.allocation.mode, .sleeveWeights)
+    }
+
+    func testBuildPortfolioCSVImportScreenStateReturnsInvalidWhenAnySleeveIsInvalid() {
+        let state = BKAppFacade.buildPortfolioCSVImportScreenState(
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .smaCrossover),
+                BKAppPortfolioImportItem(symbol: "BROKEN", csv: "", preset: .smaCrossover),
+            ]
+        )
+
+        XCTAssertEqual(state.portfolioID, "PORTFOLIO")
+        XCTAssertEqual(state.status, .invalid)
+        XCTAssertFalse(state.isReadyToContinue)
+        XCTAssertEqual(state.sleeves.count, 2)
+        XCTAssertTrue(state.issues.contains(where: { $0.symbol == "BROKEN" }))
+    }
+
+    func testRunConfirmedPortfolioCSVImportUsesInferredSleeveSettings() {
+        let screenState = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "AUTO",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: descendingCsv, preset: .smaCrossover, targetWeight: 0.7),
+                BKAppPortfolioImportItem(symbol: "MSFT", csv: inlineCsv, preset: .smaCrossover, targetWeight: 0.3),
+            ],
+            allocation: .sleeveWeights,
+            maxRows: 2
+        )
+
+        let report = BKAppFacade.runConfirmedPortfolioCSVImport(from: screenState)
+
+        XCTAssertTrue(report.run.isSuccessful)
+        XCTAssertFalse(report.run.isPartialSuccess)
+        XCTAssertEqual(report.confirmedSettingsBySymbol.count, 0)
+        XCTAssertEqual(report.run.succeededSleeveCount, 2)
+        XCTAssertEqual(report.run.failedSleeveCount, 0)
+        XCTAssertEqual(report.run.sleeveReports.count, 2)
+        XCTAssertEqual(report.run.sleeveReports[0].resolvedWeight, 0.7, accuracy: 1e-9)
+        XCTAssertEqual(report.run.sleeveReports[1].resolvedWeight, 0.3, accuracy: 1e-9)
+        XCTAssertEqual(
+            report.run.sleeveReports.first?.summary?.startDate,
+            ISO8601DateFormatter().date(from: "2024-01-01T00:00:00Z")
+        )
+    }
+
+    func testRunConfirmedPortfolioCSVImportAllowsPerSleeveOverrides() {
+        let screenState = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "OVERRIDES",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: ambiguousDateCsv, preset: .smaCrossover),
+                BKAppPortfolioImportItem(symbol: "MSFT", csv: inlineCsv, preset: .smaCrossover),
+            ],
+            allocation: .explicit([0.5, 0.5]),
+            maxRows: 2
+        )
+        let mapping = BKCSVColumnMapping(
+            date: "date",
+            open: "open",
+            high: "high",
+            low: "low",
+            close: "close",
+            volume: "volume"
+        )
+
+        let report = BKAppFacade.runConfirmedPortfolioCSVImport(
+            from: screenState,
+            confirmedSettingsBySymbol: [
+                "AAPL": BKAppCSVConfirmedImportSettings(
+                    columnMapping: mapping,
+                    dateFormat: "yyyy-MM-dd",
+                    reverse: false
+                )
+            ]
+        )
+
+        XCTAssertTrue(report.run.isSuccessful)
+        XCTAssertEqual(report.confirmedSettingsBySymbol["AAPL"]?.columnMapping?.date, "date")
+        XCTAssertEqual(report.run.succeededSleeveCount, 2)
+        XCTAssertEqual(report.run.sleeveReports.count, 2)
+        XCTAssertEqual(report.run.sleeveReports[0].resolvedWeight, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(report.run.sleeveReports[1].resolvedWeight, 0.5, accuracy: 1e-9)
+    }
+
     func testAppFacadeRunCSVImportAndExportMarkdownSuccess() {
         let report = BKAppFacade.runCSVImportAndExportMarkdown(
             symbol: "AAPL",

@@ -1,200 +1,106 @@
 # BacktestingKit
 
-BacktestingKit is a Swift framework for running strategy backtests and simulation workflows with model parity to an existing JavaScript engine (v2 and v3 paths).
+BacktestingKit is a Swift framework for deterministic backtests and simulation workflows with v2 and v3 parity-oriented execution paths.
 
 Current release track: **v0.1.0**.
 
-## Highlights
+## Who This Is For
 
-- v2 and v3 simulation engines with parity-oriented data models.
-- Strategy/rule evaluation plus indicator generation.
-- Built-in analysis, optimization, walk-forward, and Monte Carlo helpers.
-- Strict CSV ingestion support:
-  - ISO8601 date parsing.
-  - Chronological input enforcement.
-  - Explicit parse errors for UI handling.
-  - Custom OHLCV column mapping.
-- Batch simulation driver with progress and structured error reporting.
-- Data source is provider-driven (`BKRawCsvProvider`), not hard-coded to a single vendor.
+- App integrators who want to start with `BKAppFacade` and move to `BKEngine` only when they need lower-level control.
+- Engine integrators who want direct v2/v3 request-model execution through `BKEngine`.
+- Candle-first workflows that already have normalized `Candlestick` data and want `BacktestingKitManager`.
+- Diagnostics/export/parity workflows that need the tool helpers.
 
 ## Project Structure
 
 - `BacktestingKit/Core` – foundational shared types.
 - `BacktestingKit/Models` – v2/v3/external model definitions.
-- `BacktestingKit/Indicators` – v2/v3 indicator setup.
-- `BacktestingKit/Rules` – v2/v3 rule evaluation.
-- `BacktestingKit/Simulation` – v2/v3 simulation entrypoints and drivers.
 - `BacktestingKit/Data` – CSV parsing, providers, cache, AlphaVantage support.
-- `BacktestingKit/Analysis` – post-analysis and optimization helpers.
-- `BacktestingKit/Engine` – presets, strategy factory, high-level manager APIs.
-- `BacktestingKit/Support` – coders/model conversion helpers.
+- `BacktestingKit/Simulation` – v2/v3 simulation entrypoints and drivers.
+- `BacktestingKit/Engine` – presets, high-level engine APIs, manager workflows.
+- `BacktestingKit/Tools` – validation, diagnostics, export, comparison, scenario, and parity helpers.
 
-See also: `BacktestingKit/ARCHITECTURE.md`
+Architecture notes live in `BacktestingKit/ARCHITECTURE.md`.
 
-## Quick Start
+## Start Here
 
-Open and build:
+- New to the package: [docs/ONBOARDING.md](docs/ONBOARDING.md)
+- Want the shortest install/build/run checklist: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+- Not sure which API surface to use: [docs/CHOOSE_YOUR_SURFACE.md](docs/CHOOSE_YOUR_SURFACE.md)
+- Want the full docs map: [docs/INDEX.md](docs/INDEX.md)
+- Want guided interactive tutorials in Xcode: open `BacktestingKit/BacktestingKit.docc`
+
+## First Success
+
+Build the package:
 
 ```bash
 swift build
 ```
 
-Basic CSV parse:
+Then run the smallest offline success path:
 
 ```swift
-let parseResult = csvToBars(csv, reverse: false)
-if case .success(let bars) = parseResult {
-    // use bars
+import BacktestingKit
+
+let result = BKEngine.runDemo(dataset: .aapl)
+
+switch result {
+case .success(let summary):
+    print(summary.symbol)
+    print(summary.barCount)
+    print(summary.metrics.totalReturn)
+case .failure(let error):
+    print(error.localizedDescription)
 }
 ```
 
-Choose your path:
+Success looks like:
 
-- Beginner onboarding: `docs/ONBOARDING.md`
-- Beginner app facade: `BKAppFacade`
-- App-side CSV import/validation:
-  - Import-review path: `BKAppFacade.buildCSVImportScreenState(...)`
-  - Confirmed execution handoff: `BKAppFacade.runConfirmedCSVImport(...)`
-  - Developer diagnostics path: `BKAppFacade.diagnoseCSVImport(...)`
-  - Manual settings path: `BKAppFacade.inspectCSV(...)`, `previewCSV(...)`, `validateCSVImport(...)`, `normalizeCSVImport(...)`, `runCSVImport(...)`
-  - Auto-inference path: `BKAppFacade.detectCSVImportSettings(...)`, `previewCSVAuto(...)`, `validateCSVImportAuto(...)`, `normalizeCSVImportAuto(...)`, `runCSVImportAuto(...)`
-- Surface guide: `docs/CHOOSE_YOUR_SURFACE.md`
-- Offline first run: `BKEngine.runDemo(...)`
-- Inline CSV helper flow: `BKEngine.runDemoCSV(...)`, `runV2CSV(...)`, `runV3CSV(...)`
-- Canonical app integration: `BKEngine.runV2(...)`, `BKEngine.runV3(...)`
-- Candle-first manager workflows: `BacktestingKitManager`
-- Validation/export/comparison/parity tools: `BKValidationTool`, `BKExportTool`, `BKComparisonTool`, `BKParityTool`
+- the package builds locally
+- bundled CSV resources load without provider wiring
+- you get a `BKRunSummary` back and can inspect `summary.metrics.totalReturn`
 
-App-facing facade example:
+If you want the full beginner path after this, go to [docs/ONBOARDING.md](docs/ONBOARDING.md).
 
-```swift
-let report = BKAppFacade.runPresetCSVAndExportMarkdown(
-    symbol: "AAPL",
-    csv: csv,
-    preset: .smaCrossover
-)
+## Choose Your Surface
 
-let importScreen = BKAppFacade.buildCSVImportScreenState(
-    symbol: "AAPL",
-    csv: csv,
-    maxRows: 5
-)
+- `BKAppFacade`
+  Start here if your app begins with pasted, uploaded, or reviewed CSV and you want one app-facing namespace.
+- `BKEngine`
+  Use this when you need direct v2/v3 request-model control and provider-driven execution.
+- `BacktestingKitManager`
+  Use this when you already have candles and want indicator bundles, strategy recipes, and summary/report helpers.
+- Tool helpers
+  Use `BKValidationTool`, `BKExportTool`, `BKComparisonTool`, `BKScenarioTool`, and `BKParityTool` for validation, export, comparison, smoke scenarios, and parity checks.
 
-let confirmedRun = BKAppFacade.runConfirmedCSVImport(
-    from: importScreen,
-    csv: csv,
-    preset: .smaCrossover
-)
+The fuller decision guide is in [docs/CHOOSE_YOUR_SURFACE.md](docs/CHOOSE_YOUR_SURFACE.md).
 
-let importDiagnostics = BKAppFacade.diagnoseCSVImport(
-    symbol: "AAPL",
-    csv: csv
-)
+## Documentation
 
-let importPreview = BKAppFacade.previewCSV(
-    symbol: "AAPL",
-    csv: csv,
-    maxRows: 5
-)
+### Beginner Path
 
-let importAuto = BKAppFacade.runCSVImportAuto(
-    symbol: "AAPL",
-    csv: csv,
-    preset: .smaCrossover
-)
-```
+- [docs/ONBOARDING.md](docs/ONBOARDING.md) – the canonical markdown tutorial from build to app integration
+- [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) – the compact quick reference after installation
+- [docs/CHOOSE_YOUR_SURFACE.md](docs/CHOOSE_YOUR_SURFACE.md) – the routing guide for `BKAppFacade`, `BKEngine`, manager workflows, and tools
 
-Canonical engine entrypoint:
+### Guided Interactive Tutorials
 
-```swift
-// Use BKEngine as the single source of truth for engine entrypoints.
-let v3Result = await BKEngine.runV3(v3Request)
-let v2Result = await BKEngine.runV2(v2Request)
-```
+- `BacktestingKit/BacktestingKit.docc` – DocC tutorial bundle for install, first success, CSV import, app integration, first backtest, and follow-on workflows
 
-Provider injection example (no vendor lock-in):
+### Reference and Deep Dives
 
-```swift
-let provider = BKCustomCsvProvider { ticker, p1, p2 in
-    // Fetch CSV from your own backend/vendor and return raw CSV text.
-    await MyDataGateway.shared.fetchCsv(symbol: ticker, p1: p1, p2: p2)
-}
-```
+- [docs/INDEX.md](docs/INDEX.md) – complete documentation map
+- [docs/PACKAGE_USAGE_GUIDE.md](docs/PACKAGE_USAGE_GUIDE.md) – workflow-oriented package usage map
+- [docs/ENGINE_GUIDE.md](docs/ENGINE_GUIDE.md) – canonical `BKEngine`, drivers, and execution flows
+- [docs/DATA_INGESTION.md](docs/DATA_INGESTION.md) – CSV parsing, mappings, providers, and normalization
+- [docs/HELPER_WORKFLOWS.md](docs/HELPER_WORKFLOWS.md) – additive helper and façade workflows
+- [docs/TOOLS.md](docs/TOOLS.md) – validation, diagnostics, export, comparison, scenario, and parity helpers
+- [docs/INDICATORS_STRATEGIES_METRICS.md](docs/INDICATORS_STRATEGIES_METRICS.md) – manager-owned indicator, strategy, and metrics workflows
 
-CSV parse with custom headers:
+## Parity
 
-```swift
-let mapping = BKCSVColumnMapping(
-    date: "Date",
-    open: "OpenPrice",
-    high: "HighPrice",
-    low: "LowPrice",
-    close: "ClosePrice",
-    volume: "TradeVolume"
-)
-
-let barsResult = csvToBars(csv, reverse: false, columnMapping: mapping)
-```
-
-Fastest CSV-backed workflow:
-
-```swift
-let csv = """
-timestamp,open,high,low,close,volume
-2024-01-01,100,101,99,100.5,1000000
-2024-01-02,100.5,102,100,101.5,1100000
-"""
-
-let result = BKEngine.runDemoCSV(symbol: "DEMO", csv: csv)
-```
-
-Bundled preset smoke workflow:
-
-```swift
-let summary = BKQuickDemo.runBundledPresetDemo(
-    dataset: .aapl,
-    preset: .smaCrossover
-)
-
-let matrix = BKQuickDemo.runBundledSmokeMatrix(
-    datasets: [.aapl, .msft, .nvda],
-    preset: .emaMeanReversion
-)
-```
-
-Manager helper workflow:
-
-```swift
-let manager = BacktestingKitManager()
-let trend = manager.applyTrendIndicatorBundle(
-    candles: candles,
-    smaPeriods: [5, 20],
-    emaPeriods: [12, 26],
-    keyNamespace: "screen"
-)
-
-let summary = manager.runSMACrossoverSummary(
-    symbol: "AAPL",
-    candles: candles,
-    fast: 5,
-    slow: 20
-)
-```
-
-Tool workflow example:
-
-```swift
-let preflight = BKValidationTool.preflightCSV(csv, symbol: "AAPL")
-let collector = BKDiagnosticsCollector()
-await collector.emit(kind: .simulationStarted, stage: "simulation", message: "Running scenario")
-let diagnostics = await collector.summarizedSnapshot()
-let exported = BKScenarioTool.runExportBundle(
-    config: BKScenarioConfig(symbol: "SCENARIO"),
-    diagnostics: diagnostics
-)
-```
-
-## Trial / Parity Run
+Run the parity check with:
 
 ```bash
 bash tools/parity/run_parity.sh
@@ -210,94 +116,6 @@ Expected success output:
 
 - `PARITY_OK`
 - `Parity check passed.`
-
-## Quick Trial Demo
-
-Run a bundled end-to-end trial using:
-
-- Symbol: `AAPL`
-- Candles: `10y / 1d`
-- Strategy: `SMA crossover 5/20`
-
-```bash
-swift run BacktestingKitTrialDemo
-```
-
-One-liner API (works in apps, tests, and Swift Playground after importing the package):
-
-```swift
-let demoResult = BKEngine.runDemo(dataset: .aapl)
-```
-
-The demo emits concise step-by-step logs (load sample CSV, parse, run backtest, summarize metrics).
-
-Bundled demo datasets (10 total across NASDAQ + NYSE):
-
-- `BacktestingKit/Resources/AAPL_10Y_1D.csv`
-- `BacktestingKit/Resources/MSFT_10Y_1D.csv`
-- `BacktestingKit/Resources/GOOGL_10Y_1D.csv`
-- `BacktestingKit/Resources/NVDA_10Y_1D.csv`
-- `BacktestingKit/Resources/TSLA_10Y_1D.csv`
-- `BacktestingKit/Resources/AMZN_10Y_1D.csv`
-- `BacktestingKit/Resources/JPM_10Y_1D.csv`
-- `BacktestingKit/Resources/XOM_10Y_1D.csv`
-- `BacktestingKit/Resources/WMT_10Y_1D.csv`
-- `BacktestingKit/Resources/KO_10Y_1D.csv`
-
-## One-Line End-to-End Engine Calls (V2 / V3)
-
-Run full engine execution in one async call and get either `Result.success` or `Result.failure`.
-`BKEngine` is the canonical surface; lower-level drivers are still available.
-
-V3:
-
-```swift
-let result = await BKEngine.runV3(
-    .init(
-        instrument: instrument,
-        p1: 5,
-        p2: 20,
-        dateFormat: "yyyy-MM-dd",
-        executionOptions: .init(parserMode: .streamingStrict, csvColumnMapping: nil),
-        dataStore: dataStore,
-        csvProvider: csvProvider,
-        log: { print($0) }
-    )
-)
-```
-
-V2:
-
-```swift
-let result = await BKEngine.runV2(
-    .init(
-        instrumentID: "AAPL",
-        config: v2Config,
-        p1: 5,
-        p2: 20,
-        dateFormat: "yyyy-MM-dd",
-        csvColumnMapping: nil,
-        csvProvider: csvProvider,
-        log: { print($0) }
-    )
-)
-```
-
-## Detailed Docs
-
-- `docs/ONBOARDING.md`
-- `docs/PACKAGE_USAGE_GUIDE.md`
-- `docs/GETTING_STARTED.md`
-- `docs/INDEX.md`
-- `docs/HELPER_WORKFLOWS.md`
-- `docs/ENGINE_GUIDE.md`
-- `docs/DATA_INGESTION.md`
-- `docs/INDICATORS_STRATEGIES_METRICS.md`
-- `docs/TOOLS.md`
-- `docs/PARITY_TESTING.md`
-- `docs/AGENTIC_USAGE.md`
-- `docs/OPEN_SOURCE_MAINTAINERS.md`
-- `docs/RELEASE_CHECKLIST.md`
 
 ## Open Source Metadata
 

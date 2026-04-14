@@ -5,7 +5,7 @@
 
     @Section(title: "Start with BKAppFacade for import-review screens") {
         @ContentAndMedia {
-            Prefer ``BKAppFacade`` when your app starts from pasted, uploaded, or edited CSV and needs one stable review payload before execution.
+            Prefer ``BKAppFacade`` when your app starts from pasted, uploaded, or edited CSV and needs one stable review payload before execution. Success looks like a review-state payload plus a confirmed handoff path that keeps parsing logic out of UI code.
         }
 
         @Steps {
@@ -48,7 +48,7 @@
 
     @Section(title: "Drop to BKEngine when you need direct request control") {
         @ContentAndMedia {
-            Prefer ``BKEngine`` when integrating the package into an app at the request-model layer. It is the stable top-level execution surface for v2 and v3 flows.
+            Prefer ``BKEngine`` when integrating the package into an app at the request-model layer. It is the stable top-level execution surface for v2 and v3 flows, and success looks like your app owning request construction directly.
         }
     }
 
@@ -71,6 +71,10 @@
     }
 
     @Section(title: "Run the canonical v3 flow") {
+        @ContentAndMedia {
+            Success looks like a direct `await BKEngine.runV3(...)` call that you can treat as the engine boundary in app code.
+        }
+
         @Steps {
             @Step {
                 Build a request:

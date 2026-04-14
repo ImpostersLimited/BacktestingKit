@@ -602,6 +602,101 @@ public enum BKAppFacade {
         )
     }
 
+    /// Builds the full review state for an app-facing portfolio basket before execution.
+    public static func buildPortfolioCSVImportScreenState(
+        portfolioID: String = "PORTFOLIO",
+        sleeves: [BKAppPortfolioImportItem],
+        allocation: BKPortfolioAllocationInput = .sleeveWeights,
+        rebalancePolicy: BKPortfolioRebalancePolicy = .none,
+        maxRows: Int = 5
+    ) -> BKAppPortfolioImportScreenState {
+        let sleeveStates = sleeves.map { sleeve in
+            BKAppPortfolioImportItemState(
+                request: sleeve,
+                screenState: buildCSVImportScreenState(
+                    symbol: sleeve.symbol,
+                    csv: sleeve.csv,
+                    maxRows: maxRows
+                )
+            )
+        }
+
+        let issues = sleeveStates.flatMap { sleeveState in
+            sleeveState.screenState.issues.map { section in
+                BKAppPortfolioImportIssueSection(
+                    symbol: sleeveState.request.symbol,
+                    title: section.title,
+                    items: section.items
+                )
+            }
+        }
+
+        let status: BKAppCSVImportScreenStatus
+        if sleeveStates.isEmpty || sleeveStates.contains(where: { $0.screenState.status == .invalid }) {
+            status = .invalid
+        } else if sleeveStates.contains(where: { $0.screenState.status == .needsReview }) {
+            status = .needsReview
+        } else {
+            status = .ready
+        }
+
+        return BKAppPortfolioImportScreenState(
+            portfolioID: portfolioID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "PORTFOLIO" : portfolioID,
+            sleeves: sleeveStates,
+            allocation: allocation,
+            rebalancePolicy: rebalancePolicy,
+            issues: issues,
+            status: status,
+            isReadyToContinue: status == .ready
+        )
+    }
+
+    /// Runs a confirmed app-side basket import using either explicit overrides or inferred settings per sleeve.
+    public static func runConfirmedPortfolioCSVImport(
+        from screenState: BKAppPortfolioImportScreenState,
+        confirmedSettingsBySymbol: [String: BKAppCSVConfirmedImportSettings] = [:],
+        continueOnFailure: Bool = true,
+        log: @escaping @Sendable (String) -> Void = { _ in }
+    ) -> BKAppPortfolioConfirmedRunReport {
+        let sleeves = screenState.sleeves.map { sleeveState -> BKPortfolioSleeveRequest in
+            let confirmedSettings = confirmedSettingsBySymbol[sleeveState.request.symbol]
+            let settings = confirmedSettings ?? BKAppCSVConfirmedImportSettings(
+                columnMapping: sleeveState.screenState.inference.effectiveSettings.columnMapping,
+                dateFormat: sleeveState.screenState.inference.effectiveSettings.dateFormat,
+                reverse: sleeveState.screenState.inference.effectiveSettings.reverse
+            )
+            let effectiveCSV = confirmedSettings == nil
+                ? autoPreparedCSV(
+                    csv: sleeveState.request.csv,
+                    inference: sleeveState.screenState.inference
+                )
+                : sleeveState.request.csv
+
+            return BKPortfolioSleeveRequest(
+                symbol: sleeveState.request.symbol,
+                csv: effectiveCSV,
+                preset: sleeveState.request.preset,
+                dateFormat: settings.dateFormat,
+                reverse: settings.reverse,
+                columnMapping: settings.columnMapping,
+                targetWeight: sleeveState.request.targetWeight
+            )
+        }
+
+        let request = BKEngine.PortfolioRequest(
+            portfolioID: screenState.portfolioID,
+            sleeves: sleeves,
+            allocation: screenState.allocation,
+            rebalancePolicy: screenState.rebalancePolicy,
+            continueOnFailure: continueOnFailure
+        )
+
+        return BKAppPortfolioConfirmedRunReport(
+            confirmedSettingsBySymbol: confirmedSettingsBySymbol,
+            run: BKEngine.runPortfolio(request, log: log)
+        )
+    }
+
     /// Runs CSV inspection, validation, normalization, and preset execution in one app-facing helper.
     public static func runCSVImport(
         symbol: String,
@@ -822,6 +917,28 @@ public enum BKAppFacade {
             diagnostics: diagnostics,
             scenario: scenario,
             prettyPrinted: prettyPrinted
+        )
+    }
+
+    /// Exports a completed portfolio run into a portable bundle.
+    public static func exportPortfolioRunBundle(
+        _ report: BKPortfolioRunReport,
+        prettyPrinted: Bool = true
+    ) -> Result<BKPortfolioExportBundle, BKExportError> {
+        BKExportTool.exportPortfolioRunBundle(
+            report,
+            prettyPrinted: prettyPrinted
+        )
+    }
+
+    /// Exports a portfolio summary as human-readable Markdown.
+    public static func exportPortfolioMarkdownSummary(
+        _ report: BKPortfolioRunReport,
+        title: String? = nil
+    ) -> Result<String, BKExportError> {
+        BKExportTool.exportPortfolioMarkdownSummary(
+            report,
+            title: title
         )
     }
 

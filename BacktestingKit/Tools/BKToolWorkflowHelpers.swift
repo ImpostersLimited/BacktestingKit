@@ -175,6 +175,51 @@ public extension BKExportTool {
         }
     }
 
+    /// Encodes a completed additive portfolio run into portable JSON/CSV artifacts.
+    static func exportPortfolioRunBundle(
+        _ report: BKPortfolioRunReport,
+        prettyPrinted: Bool = true
+    ) -> Result<BKPortfolioExportBundle, BKExportError> {
+        switch toJSON(report, prettyPrinted: prettyPrinted) {
+        case .failure(let error):
+            return .failure(error)
+        case .success(let portfolioJSON):
+            let weightsCSV = portfolioWeightsToCSV(report.sleeveReports)
+            let failuresJSON: String?
+            if report.failures.isEmpty {
+                failuresJSON = nil
+            } else {
+                switch toJSON(report.failures, prettyPrinted: prettyPrinted) {
+                case .success(let output):
+                    failuresJSON = output
+                case .failure(let error):
+                    return .failure(error)
+                }
+            }
+
+            let rebalanceJSON: String?
+            if report.rebalanceEvents.isEmpty {
+                rebalanceJSON = nil
+            } else {
+                switch toJSON(report.rebalanceEvents, prettyPrinted: prettyPrinted) {
+                case .success(let output):
+                    rebalanceJSON = output
+                case .failure(let error):
+                    return .failure(error)
+                }
+            }
+
+            return .success(
+                BKPortfolioExportBundle(
+                    portfolioJSON: portfolioJSON,
+                    weightsCSV: weightsCSV,
+                    failuresJSON: failuresJSON,
+                    rebalanceJSON: rebalanceJSON
+                )
+            )
+        }
+    }
+
     /// Exports a compact run summary as human-readable Markdown.
     static func exportMarkdownSummary(
         _ summary: BKRunSummary,
@@ -214,6 +259,78 @@ public extension BKExportTool {
 
         return .success(markdown)
     }
+
+    /// Exports an additive portfolio run as human-readable Markdown.
+    static func exportPortfolioMarkdownSummary(
+        _ report: BKPortfolioRunReport,
+        title: String? = nil
+    ) -> Result<String, BKExportError> {
+        guard let summary = report.summary else {
+            return .failure(.emptyData("portfolio-summary"))
+        }
+
+        let heading = title ?? "\(report.portfolioID) Portfolio Summary"
+        let percentStyle = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(2))
+        let ratioStyle = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(4))
+        let sleeveLines = report.sleeveReports.map { sleeve in
+            let totalReturn = ((sleeve.summary?.metrics.totalReturn ?? 0) * 100.0).formatted(percentStyle)
+            return "- `\(sleeve.symbol)` • status: \(sleeve.status.rawValue) • weight: \((sleeve.resolvedWeight * 100.0).formatted(percentStyle))% • return: \(totalReturn)%"
+        }.joined(separator: "\n")
+
+        let markdown = """
+        # \(heading)
+
+        - Portfolio: `\(report.portfolioID)`
+        - Sleeves succeeded: \(report.succeededSleeveCount)
+        - Sleeves failed: \(report.failedSleeveCount)
+        - Trades: \(summary.metrics.tradeCount)
+        - Win rate: \((summary.metrics.winRate * 100.0).formatted(percentStyle))%
+        - Total return: \((summary.metrics.totalReturn * 100.0).formatted(percentStyle))%
+        - Annualized return: \((summary.metrics.annualizedReturn * 100.0).formatted(percentStyle))%
+        - Max drawdown: \((summary.metrics.maxDrawdown * 100.0).formatted(percentStyle))%
+        - Sharpe ratio: \(summary.metrics.sharpeRatio.formatted(ratioStyle))
+        - Profit factor: \(summary.metrics.profitFactor.formatted(ratioStyle))
+        - Rebalance events: \(report.rebalanceEvents.count)
+
+        ## Sleeves
+
+        \(sleeveLines)
+        """
+
+        return .success(markdown)
+    }
+}
+
+private func portfolioWeightsToCSV(_ sleeveReports: [BKPortfolioSleeveRunReport]) -> String {
+    var lines = [
+        "symbol,preset,status,requestedWeight,resolvedWeight,tradeCount,totalReturn,annualizedReturn,maxDrawdown,sharpeRatio"
+    ]
+    lines.reserveCapacity(sleeveReports.count + 1)
+
+    for report in sleeveReports {
+        let fields: [String] = [
+            report.symbol,
+            report.preset.rawValue,
+            report.status.rawValue,
+            report.requestedWeight.map { String($0) } ?? "",
+            String(report.resolvedWeight),
+            String(report.summary?.metrics.tradeCount ?? 0),
+            String(report.summary?.metrics.totalReturn ?? 0),
+            String(report.summary?.metrics.annualizedReturn ?? 0),
+            String(report.summary?.metrics.maxDrawdown ?? 0),
+            String(report.summary?.metrics.sharpeRatio ?? 0),
+        ]
+        lines.append(fields.map(bkEscapePortfolioCSVValue).joined(separator: ","))
+    }
+
+    return lines.joined(separator: "\n")
+}
+
+private func bkEscapePortfolioCSVValue(_ value: String) -> String {
+    if value.contains(",") || value.contains("\"") || value.contains("\n") {
+        return "\"\(value.replacing("\"", with: "\"\""))\""
+    }
+    return value
 }
 
 public extension BKScenarioTool {

@@ -5,7 +5,7 @@
 
     @Section(title: "Start with one review-state helper") {
         @ContentAndMedia {
-            Use ``BKAppFacade/buildCSVImportScreenState(symbol:csv:maxRows:)`` when your app needs inspection, inferred settings, preview rows, grouped issues, validation, normalization, and a readiness flag in one payload.
+            Use ``BKAppFacade/buildCSVImportScreenState(symbol:csv:maxRows:)`` when your app needs inspection, inferred settings, preview rows, grouped issues, validation, normalization, and a readiness flag in one payload. Success looks like a single review-state model that the UI can render directly.
         }
 
         @Steps {
@@ -34,7 +34,7 @@
 
     @Section(title: "Gate execution on readiness") {
         @ContentAndMedia {
-            The import-review helper does not execute anything. It prepares the app-side state so your UI can decide whether to continue.
+            The import-review helper does not execute anything. It prepares the app-side state so your UI can decide whether to continue. Success looks like gating on `screenState.isReadyToContinue` before calling the confirmed execution handoff.
         }
 
         @Steps {

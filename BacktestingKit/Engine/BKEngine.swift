@@ -7,6 +7,8 @@ public enum BKEngine {
     public typealias V2Request = BKEngineOneLiner.BKV2Request
     /// Provides the `V3Request` typealias for BacktestingKit interoperability.
     public typealias V3Request = BKEngineOneLiner.BKV3Request
+    /// Provides the `PortfolioRequest` typealias for additive portfolio orchestration.
+    public typealias PortfolioRequest = BKPortfolioRequest
 
     /// Factory used to build the v3 simulation driver behind `runV3`.
     public static var makeV3Driver: @Sendable (_ dataStore: BKV3DataStore, _ csvProvider: BKRawCsvProvider) -> any BKV3SimulationDriving {

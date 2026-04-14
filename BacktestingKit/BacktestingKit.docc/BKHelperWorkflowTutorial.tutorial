@@ -36,7 +36,7 @@
                 switch result {
                 case .success(let summary):
                     print(summary.symbol)
-                    print(summary.result.totalReturn)
+                    print(summary.metrics.totalReturn)
                 case .failure(let error):
                     print(error.localizedDescription)
                 }

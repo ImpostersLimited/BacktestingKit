@@ -1,19 +1,20 @@
 # BacktestingKit Onboarding
 
-This guide is the fastest beginner path through the package. It is written for someone who is new to BacktestingKit and wants one clear route from “it builds” to “I can integrate this into my app”.
+This is the canonical markdown tutorial for BacktestingKit. It is written for someone who is new to the package and wants one clear route from “it builds” to “I can integrate this into my app”.
 
-If you want the full docs map instead, start at [INDEX.md](INDEX.md). If you want the workflow-oriented package map, read [PACKAGE_USAGE_GUIDE.md](PACKAGE_USAGE_GUIDE.md).
+If you want the full docs map instead, start at [INDEX.md](INDEX.md). If you want guided interactive tutorials in Xcode, open `BacktestingKit/BacktestingKit.docc`.
 
-## What you will do
+## What You Will Finish With
 
-In this onboarding flow you will:
+By the end of this tutorial you will have:
 
 1. Build the package locally.
 2. Run a bundled demo backtest with no API keys and no external setup.
 3. Run the package from inline CSV.
-4. Learn the app-facing CSV import/validation flow.
-5. Move into the canonical app-facing `BKEngine` integration shape.
-6. Branch into the deeper guide that matches your next task.
+4. Understand which top-level surface should own your next integration step.
+5. Integrate through `BKAppFacade`.
+6. Drop to the canonical `BKEngine` path when direct request control matters.
+7. Know which deep-dive guide to read next.
 
 ## Step 1: Build the package
 
@@ -23,7 +24,19 @@ From the repo root:
 swift build
 ```
 
-If you prefer Xcode-based verification, see [GETTING_STARTED.md](GETTING_STARTED.md).
+Success looks like:
+
+- the package builds cleanly from the repo root
+- you are ready to run the bundled demo without any external provider setup
+
+What you learned:
+
+- the package can build locally in the simplest supported flow
+
+Where to go next:
+
+- continue to Step 2 for the first offline success path
+- if you want Xcode-specific build commands, see [GETTING_STARTED.md](GETTING_STARTED.md)
 
 ## Step 2: Prove the package works offline
 
@@ -40,18 +53,27 @@ switch result {
 case .success(let summary):
     print(summary.symbol)
     print(summary.barCount)
-    print(summary.result.totalReturn)
+    print(summary.metrics.totalReturn)
 case .failure(let error):
     print(error.localizedDescription)
 }
 ```
 
-When this works, you know:
+Success looks like:
 
-- the package builds
 - the bundled resources load correctly
 - the parser runs
-- the default strategy flow can complete end-to-end
+- you get a `BKRunSummary` back and can inspect `summary.metrics.totalReturn`
+
+What you learned:
+
+- `BKEngine.runDemo(...)` is the smallest full end-to-end smoke path
+- the package can complete a deterministic backtest offline
+
+Where to go next:
+
+- continue to Step 3 if you want to switch from bundled data to your own CSV
+- read [GETTING_STARTED.md](GETTING_STARTED.md) if you only wanted the shortest install/build/run checklist
 
 ## Step 3: Run your own inline CSV
 
@@ -74,14 +96,48 @@ guard preflight.isReady else {
 let result = BKEngine.runDemoCSV(symbol: "AAPL", csv: csv)
 ```
 
-Use this stage to learn two habits early:
+Success looks like:
 
-- preflight data before execution when onboarding user-supplied CSV
-- stay on helper workflows until you need lower-level control
+- your CSV passes preflight and runs through the helper-backed demo flow
+- you can move from raw CSV text to a `BKRunSummary` without building a provider type
 
-## Step 4: Learn the app-facing CSV import path
+What you learned:
 
-If your app lets users paste, upload, or edit CSV before running a backtest, stay on `BKAppFacade` first. The CSV import helpers are designed for app UIs that need inspection, preview, validation, normalization, and then execution.
+- preflight user-supplied CSV before execution
+- helper workflows are the shortest path while you are still onboarding
+
+Where to go next:
+
+- continue to Step 4 to decide which top-level surface should own your next integration step
+- read [DATA_INGESTION.md](DATA_INGESTION.md) if your next task is CSV mapping, date formats, or provider normalization
+
+## Step 4: Understand the surface choice
+
+Before wiring anything deeper, decide which surface owns your next job:
+
+- `BKAppFacade` if your input is user CSV and your output is app UI state
+- `BKEngine` if your app already knows the provider shape and wants direct request control
+- `BacktestingKitManager` if you already have candles
+- tool helpers if the task is validation, export, comparison, scenario generation, or parity
+
+Success looks like:
+
+- you know where to start before writing integration code
+- you avoid dropping into `BKEngine` earlier than necessary
+
+What you learned:
+
+- the package has distinct top-level surfaces with different jobs
+- beginner integrations should usually start helper-first and app-integrator-first
+
+Where to go next:
+
+- continue to Step 5 if your app starts from reviewed user CSV
+- read [CHOOSE_YOUR_SURFACE.md](CHOOSE_YOUR_SURFACE.md) if you want the fuller routing guide across all package surfaces
+
+## Step 5: Integrate through `BKAppFacade`
+
+For first-time app integrations, start with `BKAppFacade`. It is designed for apps that need inspection, preview, validation, normalization, and then execution from pasted, uploaded, or edited CSV.
 
 ```swift
 let screenState = BKAppFacade.buildCSVImportScreenState(
@@ -102,7 +158,7 @@ let confirmedRun = BKAppFacade.runConfirmedCSVImport(
 )
 ```
 
-If your app does not know the CSV settings yet, use the explicit auto-inference path instead of guessing in UI code. The auto helpers infer only safe defaults, report what they inferred, and still let your app surface or override those settings.
+If your app does not know the CSV settings yet, use the explicit auto-inference path instead of guessing in UI code:
 
 ```swift
 let inference = BKAppFacade.detectCSVImportSettings(
@@ -123,44 +179,24 @@ let autoRun = BKAppFacade.runCSVImportAuto(
 )
 ```
 
-Use this layer when you need:
+Success looks like:
 
-- one stable review-state payload for onboarding/import screens
-- grouped issues and readiness for app-side error display
-- one clean handoff from reviewed settings into confirmed execution
-- normalized bars/candles before deciding whether to persist or run
-- one-step import plus preset execution for simple app flows
-- a safe auto-apply path when the app does not already know the column mapping, date format, or chronological direction
+- your app can render one review-state payload with issues, preview rows, inferred settings, and readiness
+- your app can choose between reviewed and auto-inferred handoff paths without re-implementing import logic
 
-## Step 5: Move into canonical app integration
+What you learned:
 
-When you are ready to wire BacktestingKit into a real app, start with `BKAppFacade` for the shortest app-facing path, then drop to `BKEngine` when you need direct request-model control.
+- `BKAppFacade` is the default first production-style integration layer for app-facing import and preset flows
+- the package already exposes explicit reviewed and auto-inferred handoff paths
 
-### Facade-first app integration
+Where to go next:
 
-```swift
-let report = BKAppFacade.runPresetCSVAndExportMarkdown(
-    symbol: "AAPL",
-    csv: csv,
-    preset: .smaCrossover
-)
+- continue to Step 6 when you need direct engine request ownership
+- read [HELPER_WORKFLOWS.md](HELPER_WORKFLOWS.md) if you want the full façade/helper workflow catalog
 
-if report.isSuccessful {
-    print(report.markdown ?? "")
-}
-```
+## Step 6: Drop to `BKEngine` when you need direct request control
 
-Use `BKAppFacade` when you want:
-
-- one namespace for preset, scenario, export, and comparison helpers
-- a beginner-friendly app integration entrypoint
-- delegated workflows that still rely on the canonical engine/tool surfaces underneath
-
-### Canonical engine shape
-
-When you need request-level control, switch to `BKEngine`. That remains the canonical public execution surface for direct v2/v3 execution.
-
-### v3 shape
+When you are ready to own provider wiring and request construction directly, switch to `BKEngine`. That remains the canonical public execution surface for direct v2/v3 execution.
 
 ```swift
 struct DemoProvider: BKRawCsvProvider {
@@ -186,24 +222,22 @@ let request = BKEngine.V3Request(
 let result = await BKEngine.runV3(request)
 ```
 
-### v2 shape
+Success looks like:
 
-```swift
-let request = BKEngine.V2Request(
-    instrumentID: "AAPL",
-    config: config,
-    p1: 5,
-    p2: 20,
-    csvProvider: provider,
-    log: { print($0) }
-)
+- your app constructs the request model itself
+- `await BKEngine.runV3(...)` or `await BKEngine.runV2(...)` becomes the stable lower-level execution boundary
 
-let result = await BKEngine.runV2(request)
-```
+What you learned:
 
-At this point you have graduated from onboarding and can treat the package as an app integration dependency rather than a demo environment.
+- `BKEngine` is the canonical direct engine surface
+- you only need to drop here once helper/facade workflows stop being expressive enough
 
-## Step 6: Choose your next guide
+Where to go next:
+
+- read [ENGINE_GUIDE.md](ENGINE_GUIDE.md) for full v2/v3 request shapes, one-liners, drivers, and batch orchestration
+- read [DATA_INGESTION.md](DATA_INGESTION.md) if your next task is custom provider wiring or CSV normalization rules
+
+## Step 7: Choose your next guide
 
 After this onboarding path, use the guide that matches your next task:
 
@@ -221,8 +255,9 @@ After this onboarding path, use the guide that matches your next task:
 If you want a structured sequence after onboarding:
 
 1. [GETTING_STARTED.md](GETTING_STARTED.md)
-2. [HELPER_WORKFLOWS.md](HELPER_WORKFLOWS.md)
-3. [ENGINE_GUIDE.md](ENGINE_GUIDE.md)
-4. [DATA_INGESTION.md](DATA_INGESTION.md)
-5. [INDICATORS_STRATEGIES_METRICS.md](INDICATORS_STRATEGIES_METRICS.md)
-6. [TOOLS.md](TOOLS.md)
+2. [CHOOSE_YOUR_SURFACE.md](CHOOSE_YOUR_SURFACE.md)
+3. [HELPER_WORKFLOWS.md](HELPER_WORKFLOWS.md)
+4. [ENGINE_GUIDE.md](ENGINE_GUIDE.md)
+5. [DATA_INGESTION.md](DATA_INGESTION.md)
+6. [INDICATORS_STRATEGIES_METRICS.md](INDICATORS_STRATEGIES_METRICS.md)
+7. [TOOLS.md](TOOLS.md)

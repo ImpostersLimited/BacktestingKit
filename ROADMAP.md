@@ -3,7 +3,6 @@
 ## Kanban
 
 ### Backlog
-- [ ] Portfolio multi-instrument orchestration API
 - [ ] Result export API (JSON/CSV)
 - [ ] Structured logging context model
 - [ ] Mobile memory budget guardrails
@@ -23,6 +22,7 @@
 - [ ] None
 
 ### Done
+- [x] Portfolio multi-instrument orchestration API
 - [x] Canonical engine entrypoint (`BKEngine`)
 - [x] One-liner API (v2/v3)
 - [x] Typed `Result` error model (`BKEngineFailure`)

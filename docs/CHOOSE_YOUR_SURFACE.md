@@ -2,6 +2,8 @@
 
 Use this guide when you are not sure whether to start with `BKAppFacade`, `BKEngine`, `BacktestingKitManager`, or the tool helpers.
 
+If you are brand new to the package, do `ONBOARDING.md` first and come back here once you have one successful run.
+
 ## Start with `BKAppFacade`
 
 Use `BKAppFacade` when you are building an app and want the shortest path from user input to a usable backtesting workflow.
@@ -22,6 +24,11 @@ Start here first when your app needs:
 - `runCSVImportAuto(...)`
 - `runPresetCSVAndExportMarkdown(...)`
 
+Success looks like:
+
+- your app can render review state, grouped issues, and readiness without reconstructing parsing logic
+- the app can move from reviewed CSV to execution in one handoff
+
 ## Drop to `BKEngine`
 
 Use `BKEngine` when you need direct request-model control over v2 or v3 execution.
@@ -39,6 +46,11 @@ Start here when your app already knows:
 - the request configuration
 - whether it wants the v2 or v3 path
 
+Success looks like:
+
+- your integration owns request construction directly
+- you call `await BKEngine.runV3(...)` or `await BKEngine.runV2(...)` and handle the result at the engine boundary
+
 ## Use `BacktestingKitManager`
 
 Use `BacktestingKitManager` when you are already working with candles and want candle-first composition.
@@ -48,9 +60,12 @@ Choose it for:
 - indicator bundles
 - strategy recipes
 - summary/report building over `Candlestick` arrays
-- manager-owned screening and metrics helpers
 
 Do not start here for CSV import UI work. Use `BKAppFacade` or `BKEngine` first.
+
+Success looks like:
+
+- you stay entirely in candle-first workflows without needing import-review or provider wiring
 
 ## Use the Tool Helpers
 
@@ -73,6 +88,10 @@ Choose them for:
 - regression comparison
 - deterministic smoke scenarios
 - parity checks
+
+Success looks like:
+
+- you get validation, export, comparison, or diagnostics behavior without treating those concerns as part of your main app surface
 
 ## Recommended Order for New Users
 
