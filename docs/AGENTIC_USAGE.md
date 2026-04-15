@@ -16,9 +16,9 @@ Agents must keep these non-negotiable rules:
 Use this sequence for every non-trivial change:
 
 1. Read docs:
-   - `docs/MODELS_AND_PARITY.md`
-   - `docs/API_REFERENCE.md`
-   - `docs/TOOLS.md`
+   - `MODELS_AND_PARITY.md`
+   - `API_REFERENCE.md`
+   - `TOOLS.md`
 2. Make change in smallest isolated file set.
 3. Run validation:
    - `swift test`
@@ -134,6 +134,6 @@ For PR automation agents:
 
 ## Related Docs
 
-- `docs/TOOLS.md`
-- `docs/PARITY_TESTING.md`
-- `docs/RELEASE_CHECKLIST.md`
+- `TOOLS.md`
+- `PARITY_TESTING.md`
+- `RELEASE_CHECKLIST.md`

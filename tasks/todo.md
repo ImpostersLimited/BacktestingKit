@@ -1,5 +1,12 @@
 # Active Todo
 
+## 2026-04-15 Release Prep
+
+- [completed] Audit release-facing metadata, roadmap/checklist state, and current verification evidence.
+- [completed] Update `CHANGELOG.md` and prepare patch-track release notes without forcing a final tag name early.
+- [completed] Sync `ROADMAP.md` and `docs/RELEASE_CHECKLIST.md` with the completed docs/tutorial and CI work.
+- [completed] Re-run release-prep verification and record what remains intentionally manual.
+
 ## 2026-04-13 Documentation and Tutorial Completion
 
 - [completed] Audit the beginner-facing markdown and DocC docs for overlap, stale examples, and unclear entry points.
@@ -26,6 +33,16 @@
 - [completed] Record results and any follow-up gaps in the review notes below.
 
 ## Review
+
+- Prepared the current patch-track release metadata with an unreleased changelog entry, a new `docs/RELEASE_NOTES_v0.1.x.md` draft, and doc index/readme references that no longer hardcode `v0.1.0` as the active release track.
+- Synced the release lane in `ROADMAP.md` to reflect the work that is actually complete: API naming audit, DocC final pass, CI matrix finalization, and prepared `v0.1.x` release notes.
+- Left the publish-time steps in `docs/RELEASE_CHECKLIST.md` intentionally unchecked because tag creation, GitHub release publication, and contributor announcement are still explicit manual release actions.
+- Shared tracking: opened, updated, and closed GitHub issue `#3` for this release-prep pass after recording the final verification summary.
+- Verification: `swift build`
+- Verification: `swift build -c release`
+- Verification: `swift test` passed with 122 tests and 0 failures.
+- Verification: `swift run BacktestingKitTrialDemo` exited successfully.
+- Verification: `bash tools/parity/run_parity.sh` correctly reported that no local JS engine checkout is present, so parity remains an environment-dependent release gate rather than a package failure in this worktree.
 
 - Reshaped the beginner-facing docs so `README.md` is now a lighter front door, `docs/ONBOARDING.md` is the canonical markdown tutorial, `docs/GETTING_STARTED.md` is the compact quick reference, `docs/CHOOSE_YOUR_SURFACE.md` is the routing guide, and `docs/INDEX.md` is the docs map rather than a competing onboarding page.
 - Promoted the existing DocC tutorial track by surfacing `BacktestingKit/BacktestingKit.docc` earlier in the markdown docs, reordering the DocC onboarding chapter around first success -> onboarding -> CSV import -> app integration, and adding lightweight success-oriented framing to the touched tutorial pages.

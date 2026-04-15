@@ -2,7 +2,7 @@
 
 This is the canonical markdown tutorial for BacktestingKit. It is written for someone who is new to the package and wants one clear route from “it builds” to “I can integrate this into my app”.
 
-If you want the full docs map instead, start at [INDEX.md](INDEX.md). If you want guided interactive tutorials in Xcode, open `BacktestingKit/BacktestingKit.docc`.
+If you want the full docs map instead, start at [INDEX.md](INDEX.md). If you want guided interactive tutorials in Xcode, open `../BacktestingKit/BacktestingKit.docc`.
 
 ## What You Will Finish With
 

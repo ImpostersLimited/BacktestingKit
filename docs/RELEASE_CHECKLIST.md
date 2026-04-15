@@ -19,6 +19,7 @@
 - [x] `LICENSE`, `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` are updated.
 - [x] No generated artifacts are tracked (`tools/parity/*_output.json`, `tools/parity/swift_runner_bin`, `.build/`).
 - [x] `Package.swift` products/targets/resources are correct.
+- [x] Current patch-track release notes are prepared in `docs/RELEASE_NOTES_v0.1.x.md`.
 
 ## Publish
 

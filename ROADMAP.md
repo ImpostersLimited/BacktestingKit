@@ -49,7 +49,7 @@
 - [x] UI presentation contracts for payloads/errors (`BKUserPresentablePayload`, `BKUserPresentableError`, `BKResultPresentation`)
 
 ### Release
-- [ ] API naming audit
-- [ ] DocC final pass
-- [ ] CI matrix finalization
-- [ ] `v0.1.x` release notes
+- [x] API naming audit
+- [x] DocC final pass
+- [x] CI matrix finalization
+- [x] `v0.1.x` release notes

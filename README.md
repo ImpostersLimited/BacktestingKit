@@ -2,7 +2,7 @@
 
 BacktestingKit is a Swift framework for deterministic backtests and simulation workflows with v2 and v3 parity-oriented execution paths.
 
-Current release track: **v0.1.0**.
+Current release track: **v0.1.x**.
 
 ## Who This Is For
 

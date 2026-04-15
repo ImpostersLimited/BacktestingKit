@@ -8,7 +8,7 @@ This directory contains the markdown companion docs for BacktestingKit. Use this
 - Already installed and want the shortest route to first success: `GETTING_STARTED.md`
 - Not sure whether to use `BKAppFacade`, `BKEngine`, manager workflows, or tools: `CHOOSE_YOUR_SURFACE.md`
 - Want the workflow-oriented package map: `PACKAGE_USAGE_GUIDE.md`
-- Want guided interactive tutorials in Xcode: open `BacktestingKit/BacktestingKit.docc`
+- Want guided interactive tutorials in Xcode: open `../BacktestingKit/BacktestingKit.docc`
 
 ## Recommended Beginner Order
 
@@ -45,5 +45,6 @@ This directory contains the markdown companion docs for BacktestingKit. Use this
 - `../ROADMAP.md` — master checklist for all planned/completed engine work.
 - `PARITY_TESTING.md` — JS parity runner setup and expectations.
 - `RELEASE_CHECKLIST.md` — release gate checklist.
-- `RELEASE_NOTES_v0.1.0.md` — prepared GitHub release notes for `v0.1.0`.
+- `RELEASE_NOTES_v0.1.x.md` — prepared release notes for the current `v0.1.x` release track.
+- `RELEASE_NOTES_v0.1.0.md` — historical release notes for the first public release.
 - `OPEN_SOURCE_MAINTAINERS.md` — maintenance policy and contribution standards.

@@ -137,4 +137,4 @@ case .failure(let error):
 - Use `BKEngine` for app integration.
 - Use `BKSimulationDriver`/`BKV2SimulationDriver` when you need low-level orchestration.
 - Use `BKQuickDemo` for smoke tests, CI sanity checks, and playground validation.
-- Use `docs/PACKAGE_USAGE_GUIDE.md` when you want the package organized by workflow rather than by implementation layer.
+- Use `PACKAGE_USAGE_GUIDE.md` when you want the package organized by workflow rather than by implementation layer.
