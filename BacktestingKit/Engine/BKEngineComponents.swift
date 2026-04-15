@@ -27,6 +27,7 @@ public struct BKDefaultSimulationDriverFactory: BKSimulationDriverFactory {
 
 /// Single source of truth for engine components.
 public struct BKEngineComponentGraph: Sendable {
+    /// Simulation factory associated with this value.
     public var simulationFactory: any BKSimulationDriverFactory
 
     /// Creates a new instance.

@@ -4,6 +4,10 @@
     }
 
     @Section(title: "Build the package") {
+        @ContentAndMedia {
+            Success looks like a clean local build with no provider wiring or external setup required yet.
+        }
+
         @Steps {
             @Step {
                 Run:
@@ -16,6 +20,10 @@
     }
 
     @Section(title: "Run the bundled demo") {
+        @ContentAndMedia {
+            Success looks like a `BKRunSummary` result that lets you inspect `summary.metrics.totalReturn`.
+        }
+
         @Steps {
             @Step {
                 Import the package:
@@ -40,7 +48,7 @@
                 switch result {
                 case .success(let summary):
                     print(summary.symbol)
-                    print(summary.result.totalReturn)
+                    print(summary.metrics.totalReturn)
                 case .failure(let error):
                     print(error.localizedDescription)
                 }

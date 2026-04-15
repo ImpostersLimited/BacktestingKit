@@ -4,16 +4,19 @@ import Foundation
 public enum TechnicalIndicator: Hashable, Identifiable, Equatable, Codable, CustomStringConvertible, CaseIterable {
     case sma(period: Int)
 
+    /// All supported cases for this type.
     public static var allCases: [TechnicalIndicator] {
         // Only representative cases without associated values
         // (users can extend as needed)
         [.sma(period: 0)]
     }
+    /// Stable identifier for this value.
     public var id: Int {
         switch self {
         case .sma(let period): return period.hashValue ^ 0x1000
         }
     }
+    /// Human-readable description for this value.
     public var description: String {
         switch self {
         case .sma(let period): return "SMA(\(period))"
@@ -27,9 +30,11 @@ public enum StrategyOperand: Hashable, Identifiable, Equatable, Codable, CustomS
     case price(TechnicalIndicatorValueProvider.PriceType)
     case constant(Double)
 
+    /// All supported cases for this type.
     public static var allCases: [StrategyOperand] {
         [.indicator(.sma(period: 0)), .price(.open), .constant(0)]
     }
+    /// Stable identifier for this value.
     public var id: Int {
         switch self {
         case .indicator(let ti): return ti.id ^ 0x2000
@@ -37,6 +42,7 @@ public enum StrategyOperand: Hashable, Identifiable, Equatable, Codable, CustomS
         case .constant(let d): return Int(truncatingIfNeeded: d.bitPattern)
         }
     }
+    /// Human-readable description for this value.
     public var description: String {
         switch self {
         case .indicator(let ti): return "Indicator(\(ti))"
@@ -52,9 +58,11 @@ public enum StrategyOperator: Hashable, Identifiable, Equatable, Codable, Custom
     case lessThan
     case greaterThanOrEqual
     case lessThanOrEqual
+    /// All supported cases for this type.
     public static var allCases: [StrategyOperator] {
         [.greaterThan, .lessThan, .greaterThanOrEqual, .lessThanOrEqual]
     }
+    /// Stable identifier for this value.
     public var id: Int {
         switch self {
         case .greaterThan: return 0
@@ -63,6 +71,7 @@ public enum StrategyOperator: Hashable, Identifiable, Equatable, Codable, Custom
         case .lessThanOrEqual: return 3
         }
     }
+    /// Human-readable description for this value.
     public var description: String {
         switch self {
         case .greaterThan: return ">"
@@ -75,8 +84,11 @@ public enum StrategyOperator: Hashable, Identifiable, Equatable, Codable, Custom
 
 // Nested enum
 extension TechnicalIndicatorValueProvider.PriceType: Hashable, Identifiable, Equatable, Codable, CustomStringConvertible, CaseIterable {
+    /// All supported cases for this type.
     public static var allCases: [Self] { [.open, .high, .low, .close, .volume] }
+    /// Stable identifier for this value.
     public var id: Int { self.hashValue }
+    /// Human-readable description for this value.
     public var description: String {
         switch self {
         case .open: return "Open"
@@ -90,8 +102,11 @@ extension TechnicalIndicatorValueProvider.PriceType: Hashable, Identifiable, Equ
 
 /// Represents `StrategyCondition` in the BacktestingKit public API.
 public struct StrategyCondition: Hashable, Identifiable, Equatable, Codable {
+    /// Lhs associated with this value.
     public let lhs: StrategyOperand
+    /// Op associated with this value.
     public let op: StrategyOperator
+    /// Rhs associated with this value.
     public let rhs: StrategyOperand
     /// Creates a new instance.
     public init(_ lhs: StrategyOperand, _ op: StrategyOperator, _ rhs: StrategyOperand) {
@@ -99,13 +114,17 @@ public struct StrategyCondition: Hashable, Identifiable, Equatable, Codable {
         self.op = op
         self.rhs = rhs
     }
+    /// Stable identifier for this value.
     public var id: Int { lhs.id ^ op.id ^ rhs.id }
 }
 
 /// Represents `TechnicalIndicatorValueProvider` in the BacktestingKit public API.
 public struct TechnicalIndicatorValueProvider: Identifiable, Equatable, Codable {
+    /// Index associated with this value.
     public let index: Int
+    /// Candles associated with this value.
     public let candles: [Candlestick]
+    /// Indicator name map associated with this value.
     public let indicatorNameMap: [TechnicalIndicator: String]
     /// Executes `value`.
     public func value(for indicator: TechnicalIndicator) -> Double? {
@@ -127,5 +146,6 @@ public struct TechnicalIndicatorValueProvider: Identifiable, Equatable, Codable 
     }
     /// Represents `PriceType` in the BacktestingKit public API.
     public enum PriceType { case open, high, low, close, volume }
+    /// Stable identifier for this value.
     public var id: Int { index }
 }

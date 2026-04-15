@@ -602,6 +602,112 @@ public enum BKAppFacade {
         )
     }
 
+    /// Builds the full review state for an app-facing portfolio basket before execution.
+    public static func buildPortfolioCSVImportScreenState(
+        portfolioID: String = "PORTFOLIO",
+        sleeves: [BKAppPortfolioImportItem],
+        allocation: BKPortfolioAllocationInput = .sleeveWeights,
+        rebalancePolicy: BKPortfolioRebalancePolicy = .none,
+        maxRows: Int = 5
+    ) -> BKAppPortfolioImportScreenState {
+        let normalizedPortfolioID = portfolioID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "PORTFOLIO"
+            : portfolioID
+        let sleeveStates = sleeves.map { sleeve in
+            BKAppPortfolioImportItemState(
+                request: sleeve,
+                screenState: buildCSVImportScreenState(
+                    symbol: sleeve.symbol,
+                    csv: sleeve.csv,
+                    maxRows: maxRows
+                )
+            )
+        }
+
+        let sleeveIssues = sleeveStates.flatMap { sleeveState in
+            sleeveState.screenState.issues.map { section in
+                BKAppPortfolioImportIssueSection(
+                    symbol: sleeveState.request.symbol,
+                    title: section.title,
+                    items: section.items
+                )
+            }
+        }
+        let portfolioIssues = buildPortfolioImportIssueSections(
+            portfolioID: normalizedPortfolioID,
+            sleeves: sleeveStates,
+            allocation: allocation
+        )
+        let issues = sleeveIssues + portfolioIssues
+
+        let status: BKAppCSVImportScreenStatus
+        if sleeveStates.isEmpty
+            || !portfolioIssues.isEmpty
+            || sleeveStates.contains(where: { $0.screenState.status == .invalid }) {
+            status = .invalid
+        } else if sleeveStates.contains(where: { $0.screenState.status == .needsReview }) {
+            status = .needsReview
+        } else {
+            status = .ready
+        }
+
+        return BKAppPortfolioImportScreenState(
+            portfolioID: normalizedPortfolioID,
+            sleeves: sleeveStates,
+            allocation: allocation,
+            rebalancePolicy: rebalancePolicy,
+            issues: issues,
+            status: status,
+            isReadyToContinue: status == .ready
+        )
+    }
+
+    /// Runs a confirmed app-side basket import using either explicit overrides or inferred settings per sleeve.
+    public static func runConfirmedPortfolioCSVImport(
+        from screenState: BKAppPortfolioImportScreenState,
+        confirmedSettingsBySymbol: [String: BKAppCSVConfirmedImportSettings] = [:],
+        continueOnFailure: Bool = true,
+        log: @escaping @Sendable (String) -> Void = { _ in }
+    ) -> BKAppPortfolioConfirmedRunReport {
+        let sleeves = screenState.sleeves.map { sleeveState -> BKPortfolioSleeveRequest in
+            let confirmedSettings = confirmedSettingsBySymbol[sleeveState.request.symbol]
+            let settings = confirmedSettings ?? BKAppCSVConfirmedImportSettings(
+                columnMapping: sleeveState.screenState.inference.effectiveSettings.columnMapping,
+                dateFormat: sleeveState.screenState.inference.effectiveSettings.dateFormat,
+                reverse: sleeveState.screenState.inference.effectiveSettings.reverse
+            )
+            let effectiveCSV = confirmedSettings == nil
+                ? autoPreparedCSV(
+                    csv: sleeveState.request.csv,
+                    inference: sleeveState.screenState.inference
+                )
+                : sleeveState.request.csv
+
+            return BKPortfolioSleeveRequest(
+                symbol: sleeveState.request.symbol,
+                csv: effectiveCSV,
+                preset: sleeveState.request.preset,
+                dateFormat: settings.dateFormat,
+                reverse: settings.reverse,
+                columnMapping: settings.columnMapping,
+                targetWeight: sleeveState.request.targetWeight
+            )
+        }
+
+        let request = BKEngine.PortfolioRequest(
+            portfolioID: screenState.portfolioID,
+            sleeves: sleeves,
+            allocation: screenState.allocation,
+            rebalancePolicy: screenState.rebalancePolicy,
+            continueOnFailure: continueOnFailure
+        )
+
+        return BKAppPortfolioConfirmedRunReport(
+            confirmedSettingsBySymbol: confirmedSettingsBySymbol,
+            run: BKEngine.runPortfolio(request, log: log)
+        )
+    }
+
     /// Runs CSV inspection, validation, normalization, and preset execution in one app-facing helper.
     public static func runCSVImport(
         symbol: String,
@@ -825,6 +931,28 @@ public enum BKAppFacade {
         )
     }
 
+    /// Exports a completed portfolio run into a portable bundle.
+    public static func exportPortfolioRunBundle(
+        _ report: BKPortfolioRunReport,
+        prettyPrinted: Bool = true
+    ) -> Result<BKPortfolioExportBundle, BKExportError> {
+        BKExportTool.exportPortfolioRunBundle(
+            report,
+            prettyPrinted: prettyPrinted
+        )
+    }
+
+    /// Exports a portfolio summary as human-readable Markdown.
+    public static func exportPortfolioMarkdownSummary(
+        _ report: BKPortfolioRunReport,
+        title: String? = nil
+    ) -> Result<String, BKExportError> {
+        BKExportTool.exportPortfolioMarkdownSummary(
+            report,
+            title: title
+        )
+    }
+
     /// Compares two summaries and flags differences larger than the supplied tolerance.
     public static func compareRuns(
         baseline: BKRunSummary,
@@ -838,7 +966,7 @@ public enum BKAppFacade {
         )
     }
 
-    /// Throws when two summaries are not equivalent within the supplied tolerance.
+    /// Throws when two run summaries are not equivalent within the supplied tolerance.
     @discardableResult
     public static func assertEquivalent(
         baseline: BKRunSummary,
@@ -1365,6 +1493,97 @@ public enum BKAppFacade {
         }
 
         return sections
+    }
+
+    private static func buildPortfolioImportIssueSections(
+        portfolioID: String,
+        sleeves: [BKAppPortfolioImportItemState],
+        allocation: BKPortfolioAllocationInput
+    ) -> [BKAppPortfolioImportIssueSection] {
+        var items: [BKAppCSVImportIssueItem] = []
+        let duplicateSymbols = duplicatePortfolioImportSymbols(in: sleeves)
+        if !duplicateSymbols.isEmpty {
+            items.append(
+                BKAppCSVImportIssueItem(
+                    severity: .error,
+                    code: "portfolio_duplicate_symbols",
+                    message: "Portfolio sleeve symbols must be unique. Duplicates: \(duplicateSymbols.joined(separator: ", ")).",
+                    source: .validation
+                )
+            )
+        }
+
+        switch allocation.mode {
+        case .explicit:
+            let weights = allocation.explicitWeights ?? []
+            if weights.count != sleeves.count {
+                items.append(
+                    BKAppCSVImportIssueItem(
+                        severity: .error,
+                        code: "portfolio_explicit_weight_count_mismatch",
+                        message: "Explicit portfolio weights must match the sleeve count.",
+                        source: .validation
+                    )
+                )
+            } else {
+                let clampedTotal = weights.reduce(0.0) { partial, weight in
+                    partial + max(weight, 0)
+                }
+                if clampedTotal <= 0 {
+                    items.append(
+                        BKAppCSVImportIssueItem(
+                            severity: .error,
+                            code: "portfolio_explicit_weight_total_invalid",
+                            message: "Explicit portfolio weights must resolve to a positive total.",
+                            source: .validation
+                        )
+                    )
+                }
+            }
+
+        case .riskOnRiskOff:
+            let count = sleeves.count
+            let riskOnIndex = allocation.riskOnIndex ?? 0
+            let riskOffIndex = allocation.riskOffIndex ?? 1
+            if !(riskOnIndex >= 0
+                && riskOnIndex < count
+                && riskOffIndex >= 0
+                && riskOffIndex < count
+                && riskOnIndex != riskOffIndex) {
+                items.append(
+                    BKAppCSVImportIssueItem(
+                        severity: .error,
+                        code: "portfolio_risk_on_risk_off_indices",
+                        message: "Risk-on / risk-off allocation requires two distinct valid sleeve indices.",
+                        source: .validation
+                    )
+                )
+            }
+
+        case .sleeveWeights, .riskParity:
+            break
+        }
+
+        guard !items.isEmpty else { return [] }
+        return [BKAppPortfolioImportIssueSection(symbol: portfolioID, title: "Portfolio", items: items)]
+    }
+
+    private static func duplicatePortfolioImportSymbols(
+        in sleeves: [BKAppPortfolioImportItemState]
+    ) -> [String] {
+        var seen: Set<String> = []
+        var duplicates: Set<String> = []
+
+        for sleeve in sleeves {
+            let symbol = sleeve.request.symbol.trimmingCharacters(in: .whitespacesAndNewlines)
+            if seen.contains(symbol) {
+                duplicates.insert(symbol)
+            } else {
+                seen.insert(symbol)
+            }
+        }
+
+        return duplicates.sorted()
     }
 
     private static func importScreenStatus(

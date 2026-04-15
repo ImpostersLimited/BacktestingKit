@@ -2,12 +2,19 @@ import Foundation
 
 /// App-facing inspection result for pasted inline CSV workflows.
 public struct BKAppCSVInspectionReport: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Column mapping associated with this value.
     public var columnMapping: BKCSVColumnMapping?
+    /// Preflight validation output associated with this value.
     public var preflight: BKToolPreflightReport
+    /// Number of issues represented by this value.
     public var issueCount: Int
+    /// Number of warnings represented by this value.
     public var warningCount: Int
+    /// Number of errors represented by this value.
     public var errorCount: Int
+    /// Whether this value is ready for the next workflow step.
     public var isReady: Bool
 
     /// Creates a new instance.
@@ -32,9 +39,13 @@ public struct BKAppCSVInspectionReport: Codable, Equatable, Sendable {
 
 /// A single CSV inference finding for app-facing import flows.
 public struct BKAppCSVInferenceIssue: Codable, Equatable, Sendable {
+    /// Machine-readable code associated with this value.
     public var code: String
+    /// Human-readable message associated with this value.
     public var message: String
+    /// Severity associated with this value.
     public var severity: BKValidationSeverity
+    /// Additional metadata associated with this value.
     public var metadata: [String: String]
 
     /// Creates a new instance.
@@ -53,8 +64,11 @@ public struct BKAppCSVInferenceIssue: Codable, Equatable, Sendable {
 
 /// Inferred CSV import settings before default fallback is applied.
 public struct BKAppCSVInferredSettings: Codable, Equatable, Sendable {
+    /// Column mapping associated with this value.
     public var columnMapping: BKCSVColumnMapping?
+    /// Date format string used while parsing or formatting input.
     public var dateFormat: String?
+    /// Whether the input should be reversed into chronological order.
     public var reverse: Bool?
 
     /// Creates a new instance.
@@ -71,8 +85,11 @@ public struct BKAppCSVInferredSettings: Codable, Equatable, Sendable {
 
 /// Effective CSV import settings after inference fallback/default resolution.
 public struct BKAppCSVEffectiveSettings: Codable, Equatable, Sendable {
+    /// Column mapping associated with this value.
     public var columnMapping: BKCSVColumnMapping?
+    /// Date format string used while parsing or formatting input.
     public var dateFormat: String
+    /// Whether the input should be reversed into chronological order.
     public var reverse: Bool
 
     /// Creates a new instance.
@@ -89,11 +106,17 @@ public struct BKAppCSVEffectiveSettings: Codable, Equatable, Sendable {
 
 /// Safe CSV import inference result for app-facing CSV workflows.
 public struct BKAppCSVInferenceReport: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Inspection result associated with this value.
     public var inspection: BKAppCSVInspectionReport
+    /// Inferred settings associated with this value.
     public var inferredSettings: BKAppCSVInferredSettings
+    /// Effective settings associated with this value.
     public var effectiveSettings: BKAppCSVEffectiveSettings
+    /// Issues associated with this value.
     public var issues: [BKAppCSVInferenceIssue]
+    /// Whether all import settings were inferred without ambiguity.
     public var isFullyInferred: Bool
 
     /// Creates a new instance.
@@ -116,12 +139,19 @@ public struct BKAppCSVInferenceReport: Codable, Equatable, Sendable {
 
 /// Lightweight preview row for app-side CSV inspection UIs.
 public struct BKAppCSVPreviewRow: Codable, Equatable, Sendable {
+    /// Date associated with this value.
     public var date: Date
+    /// Open price for the bar.
     public var open: Double
+    /// High price for the bar.
     public var high: Double
+    /// Low price for the bar.
     public var low: Double
+    /// Close price for the bar.
     public var close: Double
+    /// Adjusted close price for the bar when available.
     public var adjustedClose: Double?
+    /// Trading volume for the bar.
     public var volume: Double
 
     /// Creates a new instance.
@@ -146,16 +176,27 @@ public struct BKAppCSVPreviewRow: Codable, Equatable, Sendable {
 
 /// Preview-oriented report for CSV parsing and bounded row inspection.
 public struct BKAppCSVPreviewReport: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Date format string used while parsing or formatting input.
     public var dateFormat: String
+    /// Whether the input should be reversed into chronological order.
     public var reverse: Bool
+    /// Row limit associated with this value.
     public var rowLimit: Int
+    /// Inspection result associated with this value.
     public var inspection: BKAppCSVInspectionReport
+    /// Number of rows represented by this value.
     public var rowCount: Int
+    /// Start date represented by this value.
     public var startDate: Date?
+    /// End date represented by this value.
     public var endDate: Date?
+    /// Rows associated with this value.
     public var rows: [BKAppCSVPreviewRow]
+    /// Parse error associated with this value.
     public var parseError: String?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -188,9 +229,13 @@ public struct BKAppCSVPreviewReport: Codable, Equatable, Sendable {
 
 /// Compact preview summary for app-facing CSV diagnostics.
 public struct BKAppCSVPreviewSummary: Codable, Equatable, Sendable {
+    /// Number of rows represented by this value.
     public var rowCount: Int
+    /// Start date represented by this value.
     public var startDate: Date?
+    /// End date represented by this value.
     public var endDate: Date?
+    /// Effective settings associated with this value.
     public var effectiveSettings: BKAppCSVEffectiveSettings
 
     /// Creates a new instance.
@@ -209,7 +254,9 @@ public struct BKAppCSVPreviewSummary: Codable, Equatable, Sendable {
 
 /// Auto-inference wrapper around `BKAppCSVPreviewReport`.
 public struct BKAppCSVAutoPreviewReport: Codable, Equatable, Sendable {
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Preview output associated with this value.
     public var preview: BKAppCSVPreviewReport
 
     /// Creates a new instance.
@@ -224,10 +271,15 @@ public struct BKAppCSVAutoPreviewReport: Codable, Equatable, Sendable {
 
 /// Validation bundle that combines structural CSV preflight with parse-stage validation.
 public struct BKAppCSVValidationReport: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Inspection result associated with this value.
     public var inspection: BKAppCSVInspectionReport
+    /// Parse validation associated with this value.
     public var parseValidation: BKValidationReport
+    /// Parse error associated with this value.
     public var parseError: String?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -248,7 +300,9 @@ public struct BKAppCSVValidationReport: Codable, Equatable, Sendable {
 
 /// Auto-inference wrapper around `BKAppCSVValidationReport`.
 public struct BKAppCSVAutoValidationReport: Codable, Equatable, Sendable {
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Validation output associated with this value.
     public var validation: BKAppCSVValidationReport
 
     /// Creates a new instance.
@@ -263,14 +317,23 @@ public struct BKAppCSVAutoValidationReport: Codable, Equatable, Sendable {
 
 /// Normalized parse output for app-side CSV import flows.
 public struct BKAppCSVNormalizedReport: Codable, Equatable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Validation output associated with this value.
     public var validation: BKAppCSVValidationReport
+    /// Bars associated with this value.
     public var bars: [BKBar]
+    /// Candles associated with this value.
     public var candles: [Candlestick]
+    /// Number of rows represented by this value.
     public var rowCount: Int
+    /// Start date represented by this value.
     public var startDate: Date?
+    /// End date represented by this value.
     public var endDate: Date?
+    /// Parse error associated with this value.
     public var parseError: String?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -299,9 +362,13 @@ public struct BKAppCSVNormalizedReport: Codable, Equatable {
 
 /// Compact normalization summary for app-facing CSV diagnostics.
 public struct BKAppCSVNormalizationSummary: Codable, Equatable, Sendable {
+    /// Number of rows represented by this value.
     public var rowCount: Int
+    /// Start date represented by this value.
     public var startDate: Date?
+    /// End date represented by this value.
     public var endDate: Date?
+    /// Ordering normalized associated with this value.
     public var orderingNormalized: Bool
 
     /// Creates a new instance.
@@ -320,7 +387,9 @@ public struct BKAppCSVNormalizationSummary: Codable, Equatable, Sendable {
 
 /// Auto-inference wrapper around `BKAppCSVNormalizedReport`.
 public struct BKAppCSVAutoNormalizedReport: Equatable {
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Normalization output associated with this value.
     public var normalization: BKAppCSVNormalizedReport
 
     /// Creates a new instance.
@@ -361,8 +430,11 @@ public enum BKAppCSVImportFailureStage: String, Codable, Equatable, Sendable {
 
 /// A single stage decision captured by the CSV import diagnostics helper.
 public struct BKAppCSVImportStageDecision: Codable, Equatable, Sendable {
+    /// Current processing stage associated with this value.
     public var stage: BKAppCSVImportDiagnosticStage
+    /// Outcome recorded for the associated stage.
     public var outcome: BKAppCSVImportStageOutcome
+    /// Human-readable message associated with this value.
     public var message: String
 
     /// Creates a new instance.
@@ -379,8 +451,11 @@ public struct BKAppCSVImportStageDecision: Codable, Equatable, Sendable {
 
 /// A bounded concrete row failure example emitted by the CSV import diagnostics helper.
 public struct BKAppCSVRowFailureExample: Codable, Equatable, Sendable {
+    /// Row index associated with this value.
     public var rowIndex: Int
+    /// Raw row associated with this value.
     public var rawRow: String
+    /// Human-readable message associated with this value.
     public var message: String
 
     /// Creates a new instance.
@@ -397,14 +472,23 @@ public struct BKAppCSVRowFailureExample: Codable, Equatable, Sendable {
 
 /// Developer-facing diagnostics report for the app-side CSV import pipeline.
 public struct BKAppCSVImportDiagnosticsReport: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Inspection result associated with this value.
     public var inspection: BKAppCSVInspectionReport
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Stage decisions associated with this value.
     public var stageDecisions: [BKAppCSVImportStageDecision]
+    /// Failure stage associated with this value.
     public var failureStage: BKAppCSVImportFailureStage?
+    /// Row failures associated with this value.
     public var rowFailures: [BKAppCSVRowFailureExample]
+    /// Preview summary associated with this value.
     public var previewSummary: BKAppCSVPreviewSummary?
+    /// Normalization summary associated with this value.
     public var normalizationSummary: BKAppCSVNormalizationSummary?
+    /// Whether the import can proceed without blocking issues.
     public var isImportViable: Bool
 
     /// Creates a new instance.
@@ -433,13 +517,21 @@ public struct BKAppCSVImportDiagnosticsReport: Codable, Equatable, Sendable {
 
 /// Aggregated app-facing output for validate + normalize + preset execution workflows.
 public struct BKAppCSVImportRunReport {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Preset associated with this value.
     public var preset: BKPresetCatalog
+    /// Validation output associated with this value.
     public var validation: BKAppCSVValidationReport
+    /// Normalization output associated with this value.
     public var normalization: BKAppCSVNormalizedReport?
+    /// Run associated with this value.
     public var run: BKPreflightedRunSummary?
+    /// High-level summary associated with this value.
     public var summary: BKRunSummary?
+    /// Human-readable failure description when execution does not succeed.
     public var failureDescription: String?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -466,7 +558,9 @@ public struct BKAppCSVImportRunReport {
 
 /// Auto-inference wrapper around `BKAppCSVImportRunReport`.
 public struct BKAppCSVAutoRunReport {
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Run associated with this value.
     public var run: BKAppCSVImportRunReport
 
     /// Creates a new instance.
@@ -481,8 +575,11 @@ public struct BKAppCSVAutoRunReport {
 
 /// Explicit CSV import settings confirmed by the app after review or user override.
 public struct BKAppCSVConfirmedImportSettings: Codable, Equatable, Sendable {
+    /// Column mapping associated with this value.
     public var columnMapping: BKCSVColumnMapping?
+    /// Date format string used while parsing or formatting input.
     public var dateFormat: String
+    /// Whether the input should be reversed into chronological order.
     public var reverse: Bool
 
     /// Creates a new instance.
@@ -499,7 +596,9 @@ public struct BKAppCSVConfirmedImportSettings: Codable, Equatable, Sendable {
 
 /// Result of executing a confirmed CSV import after an app-side review step.
 public struct BKAppCSVConfirmedRunReport {
+    /// Confirmed settings associated with this value.
     public var confirmedSettings: BKAppCSVConfirmedImportSettings
+    /// Run associated with this value.
     public var run: BKAppCSVImportRunReport
 
     /// Creates a new instance.
@@ -514,9 +613,13 @@ public struct BKAppCSVConfirmedRunReport {
 
 /// Result of running an app-facing CSV import workflow and exporting the outcome as Markdown.
 public struct BKAppCSVImportMarkdownReport {
+    /// Run associated with this value.
     public var run: BKAppCSVImportRunReport
+    /// Markdown export generated for this value.
     public var markdown: String?
+    /// Export failure associated with this value when generation does not succeed.
     public var exportError: BKExportError?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -535,7 +638,9 @@ public struct BKAppCSVImportMarkdownReport {
 
 /// Auto-inference wrapper around `BKAppCSVImportMarkdownReport`.
 public struct BKAppCSVAutoMarkdownReport {
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Run associated with this value.
     public var run: BKAppCSVImportMarkdownReport
 
     /// Creates a new instance.
@@ -564,9 +669,13 @@ public enum BKAppCSVImportIssueSource: String, Codable, Equatable, Sendable {
 
 /// A single user-displayable issue row for import-review UIs.
 public struct BKAppCSVImportIssueItem: Codable, Equatable, Sendable {
+    /// Severity associated with this value.
     public var severity: BKValidationSeverity
+    /// Machine-readable code associated with this value.
     public var code: String
+    /// Human-readable message associated with this value.
     public var message: String
+    /// Source associated with this value.
     public var source: BKAppCSVImportIssueSource
 
     /// Creates a new instance.
@@ -585,7 +694,9 @@ public struct BKAppCSVImportIssueItem: Codable, Equatable, Sendable {
 
 /// A grouped section of issues for app-facing import-review UIs.
 public struct BKAppCSVImportIssueSection: Codable, Equatable, Sendable {
+    /// Title associated with this value.
     public var title: String
+    /// Items associated with this value.
     public var items: [BKAppCSVImportIssueItem]
 
     /// Creates a new instance.
@@ -600,14 +711,23 @@ public struct BKAppCSVImportIssueSection: Codable, Equatable, Sendable {
 
 /// Aggregated screen-state payload for app-facing CSV import review flows.
 public struct BKAppCSVImportScreenState: Equatable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Inspection result associated with this value.
     public var inspection: BKAppCSVInspectionReport
+    /// Inferred settings and issues associated with this value.
     public var inference: BKAppCSVInferenceReport
+    /// Preview output associated with this value.
     public var preview: BKAppCSVAutoPreviewReport?
+    /// Validation output associated with this value.
     public var validation: BKAppCSVAutoValidationReport?
+    /// Normalization output associated with this value.
     public var normalization: BKAppCSVAutoNormalizedReport?
+    /// Issues associated with this value.
     public var issues: [BKAppCSVImportIssueSection]
+    /// Current status associated with this value.
     public var status: BKAppCSVImportScreenStatus
+    /// Whether the workflow can continue without additional user input.
     public var isReadyToContinue: Bool
 
     /// Creates a new instance.

@@ -1,9 +1,14 @@
 import Foundation
 
+/// `BKRawCsvProvider` implementation backed by the Alpha Vantage HTTP API.
 public struct AlphaVantageClient: BKRawCsvProvider {
+    /// API key associated with this value.
     public var apiKey: String
+    /// Session associated with this value.
     public var session: URLSession
+    /// Retry policy associated with this value.
     public var retryPolicy: AlphaVantageRetryPolicy
+    /// Rate limiter associated with this value.
     public var rateLimiter: BKRequestRateLimiter?
 
     /// Creates a new instance.

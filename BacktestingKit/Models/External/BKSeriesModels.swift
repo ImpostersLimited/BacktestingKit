@@ -2,7 +2,9 @@ import Foundation
 
 /// Represents `DFSeriesWindow` in the BacktestingKit public API.
 public struct DFSeriesWindow<Index, Value> {
+    /// Indices associated with this value.
     public var indices: [Index]
+    /// Values associated with this value.
     public var values: [Value]
 
     /// Executes `last`.
@@ -18,7 +20,9 @@ public struct DFSeriesWindow<Index, Value> {
 
 /// Represents `DFSeries` in the BacktestingKit public API.
 public struct DFSeries<Index, Value> {
+    /// Indices associated with this value.
     public var indices: [Index]
+    /// Values associated with this value.
     public var values: [Value]
 
     /// Creates a new instance.
@@ -322,25 +326,37 @@ extension DFSeries where Value == Double {
 
 /// Represents `DFBollingerRow` in the BacktestingKit public API.
 public struct DFBollingerRow {
+    /// Value associated with this value.
     public var value: Double
+    /// Upper associated with this value.
     public var upper: Double
+    /// Middle associated with this value.
     public var middle: Double
+    /// Lower associated with this value.
     public var lower: Double
+    /// Stddev associated with this value.
     public var stddev: Double
 }
 
 /// Represents `DFMacdRow` in the BacktestingKit public API.
 public struct DFMacdRow {
+    /// Short EMA associated with this value.
     public var shortEMA: Double
+    /// Long EMA associated with this value.
     public var longEMA: Double
+    /// MACD associated with this value.
     public var macd: Double
+    /// Signal associated with this value.
     public var signal: Double
+    /// Histogram associated with this value.
     public var histogram: Double
 }
 
 /// Represents `DFDataFrame` in the BacktestingKit public API.
 public struct DFDataFrame<Index, Row> {
+    /// Indices associated with this value.
     public var indices: [Index]
+    /// Rows associated with this value.
     public var rows: [Row]
 
     /// Creates a new instance.
@@ -412,11 +428,13 @@ public struct DFDataFrame<Index, Row> {
 
 /// Represents `DFIndex` in the BacktestingKit public API.
 public struct DFIndex<Value: Comparable & Codable>: Comparable, Codable {
+    /// Value associated with this value.
     public var value: Value
     /// Creates a new instance.
     public init(_ value: Value) {
         self.value = value
     }
+    /// Compares two typed index values using the wrapped comparable payload.
     public static func < (lhs: DFIndex<Value>, rhs: DFIndex<Value>) -> Bool {
         return lhs.value < rhs.value
     }
@@ -424,7 +442,9 @@ public struct DFIndex<Value: Comparable & Codable>: Comparable, Codable {
 
 /// Represents `DFPair` in the BacktestingKit public API.
 public struct DFPair<Index, Value> {
+    /// Index associated with this value.
     public var index: Index
+    /// Value associated with this value.
     public var value: Value
 }
 
@@ -487,6 +507,7 @@ extension DFDataFrame {
 }
 
 extension DFDataFrame where Row == [String: Double] {
+    /// Merges row dictionaries by position, preferring values from later frames on key conflicts.
     public static func merge(_ frames: [DFDataFrame<Index, [String: Double]>]) -> DFDataFrame<Index, [String: Double]> {
         guard let first = frames.first else {
             return DFDataFrame(indices: [], rows: [])
@@ -502,6 +523,7 @@ extension DFDataFrame where Row == [String: Double] {
         return DFDataFrame(indices: first.indices, rows: mergedRows)
     }
 
+    /// Merges row dictionaries by index, preserving the ordering of the first frame.
     public static func mergeAligned(_ frames: [DFDataFrame<Index, [String: Double]>]) -> DFDataFrame<Index, [String: Double]> where Index: Hashable {
         guard let first = frames.first else {
             return DFDataFrame(indices: [], rows: [])
@@ -614,6 +636,7 @@ extension DFDataFrame where Row == BKBar {
 
 /// Represents `DFDataFrameAny` in the BacktestingKit public API.
 public struct DFDataFrameAny {
+    /// Rows associated with this value.
     public var rows: [[String: Any]]
     /// Creates a new instance.
     public init(rows: [[String: Any]]) {
@@ -654,6 +677,7 @@ extension DFDataFrame {
 
 /// Represents `DFPivot` in the BacktestingKit public API.
 public struct DFPivot<RowKey: Hashable, ColumnKey: Hashable, Value> {
+    /// Rows associated with this value.
     public var rows: [RowKey: [ColumnKey: Value]]
     /// Creates a new instance.
     public init(rows: [RowKey: [ColumnKey: Value]]) {
@@ -683,6 +707,7 @@ extension DFDataFrame {
 
 /// Represents `DFCSV` in the BacktestingKit public API.
 public enum DFCSV {
+    /// Parses CSV text into a string-valued data frame using the header row as column names.
     public static func parse(_ csv: String) -> DFDataFrame<Int, [String: String]> {
         let lines = csv.split(whereSeparator: \.isNewline).map { String($0) }
         guard let header = lines.first else { return DFDataFrame(indices: [], rows: []) }
@@ -700,6 +725,7 @@ public enum DFCSV {
         return DFDataFrame(indices: indices, rows: rows)
     }
 
+    /// Parses CSV text into a numeric data frame, coercing non-numeric cells to `0`.
     public static func parseDoubles(_ csv: String) -> DFDataFrame<Int, [String: Double]> {
         let df = parse(csv)
         let rows = df.rows.map { row in
@@ -712,6 +738,7 @@ public enum DFCSV {
         return DFDataFrame(indices: df.indices, rows: rows)
     }
 
+    /// Serializes a string-valued data frame into CSV text.
     public static func toCSV(_ df: DFDataFrame<Int, [String: String]>) -> String {
         guard let first = df.rows.first else { return "" }
         let columns = Array(first.keys)
@@ -724,6 +751,7 @@ public enum DFCSV {
         return lines.joined(separator: "\n")
     }
 
+    /// Serializes a numeric data frame into CSV text.
     public static func toCSV(_ df: DFDataFrame<Int, [String: Double]>) -> String {
         guard let first = df.rows.first else { return "" }
         let columns = Array(first.keys)

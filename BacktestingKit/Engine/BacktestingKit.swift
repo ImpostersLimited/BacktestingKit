@@ -1,5 +1,6 @@
 import Foundation
 
+/// High-level façade for indicator calculation, strategy helpers, and metrics reporting.
 public final class BacktestingKitManager: BKBacktestingEngine {
     private let backtestMetricsCalculator: any BKBacktestMetricsCalculating
 

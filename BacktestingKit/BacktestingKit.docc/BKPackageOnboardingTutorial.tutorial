@@ -1,11 +1,11 @@
 @Tutorial(time: 20) {
     @Intro(title: "Get Started with BacktestingKit") {
-        Follow a single beginner path from building the package to integrating the canonical engine entrypoints in an app.
+        Follow a single beginner path from first success to app integration, starting helper-first and only dropping into `BKEngine` when you need direct request control.
     }
 
     @Section(title: "Build and prove the package works") {
         @ContentAndMedia {
-            Start with a local build and a bundled demo. This gives you a first success without API keys, network calls, or custom providers.
+            Start with a local build and a bundled demo. Success looks like a `BKRunSummary` result from bundled data without API keys, network calls, or custom providers.
         }
 
         @Steps {
@@ -34,12 +34,26 @@
                 }
                 ```
             }
+
+            @Step {
+                Inspect the returned summary:
+
+                ```swift
+                switch result {
+                case .success(let summary):
+                    print(summary.symbol)
+                    print(summary.metrics.totalReturn)
+                case .failure(let error):
+                    print(error.localizedDescription)
+                }
+                ```
+            }
         }
     }
 
     @Section(title: "Move from bundled data to your own CSV") {
         @ContentAndMedia {
-            Once the bundled demo works, inline CSV is the shortest path for tests, previews, onboarding UIs, and local experiments.
+            Once the bundled demo works, inline CSV is the shortest path for tests, previews, onboarding UIs, and local experiments. Success looks like a preflight-ready CSV and a helper-backed run without building a provider type.
         }
 
         @Steps {
@@ -63,20 +77,20 @@
 
     @Section(title: "Graduate into app integration") {
         @ContentAndMedia {
-            When you are ready for production-style usage, move to ``BKEngine`` and construct explicit v2 or v3 requests.
+            Start app integrations with ``BKAppFacade`` for CSV review and handoff, then move to ``BKEngine`` when you need direct request ownership.
         }
 
         @Steps {
             @Step {
-                Create a `BKRawCsvProvider` or use a closure-backed provider.
+                Use ``BKAppFacade/buildCSVImportScreenState(symbol:csv:maxRows:)`` when your app starts from reviewed CSV input.
             }
 
             @Step {
-                Build a request and run ``BKEngine/runV3(_:)`` or ``BKEngine/runV2(_:)``.
+                Use ``BKEngine/runV3(_:)`` or ``BKEngine/runV2(_:)`` once the app needs direct request-model control.
             }
 
             @Step {
-                Continue with the focused tutorials for helpers, manager workflows, and tooling.
+                Continue with the focused tutorials for CSV import, app integration, first backtests, helpers, manager workflows, and tooling.
             }
         }
     }

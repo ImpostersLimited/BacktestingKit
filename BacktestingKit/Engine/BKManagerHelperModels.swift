@@ -18,7 +18,9 @@ public enum BKStrategyRecipe: Codable, Equatable, Sendable {
 
 /// Result bundle for manager-level indicator composition helpers.
 public struct BKIndicatorBundleResult: Codable, Equatable, Sendable {
+    /// Candles associated with this value.
     public var candles: [Candlestick]
+    /// Applied indicator keys associated with this value.
     public var appliedIndicatorKeys: [String]
 
     /// Creates a new instance.
@@ -30,9 +32,13 @@ public struct BKIndicatorBundleResult: Codable, Equatable, Sendable {
 
 /// Lightweight snapshot of a manager-built metrics report.
 public struct BKManagerReportSnapshot: Codable, Equatable, Sendable {
+    /// Headline metrics associated with this value.
     public var metrics: BKRunHeadlineMetrics
+    /// Trade return count represented by this value.
     public var tradeReturnCount: Int
+    /// Additive equity point count represented by this value.
     public var additiveEquityPointCount: Int
+    /// Compounded equity point count represented by this value.
     public var compoundedEquityPointCount: Int
 
     /// Creates a new instance.
@@ -61,11 +67,17 @@ public struct BKManagerReportSnapshot: Codable, Equatable, Sendable {
 
 /// Report bundle produced by a manager-owned recipe workflow.
 public struct BKStrategyRecipeReport {
+    /// Recipe associated with this value.
     public var recipe: BKStrategyRecipe
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Result associated with this value.
     public var result: BacktestResult
+    /// High-level summary associated with this value.
     public var summary: BKRunSummary
+    /// Snapshot associated with this value.
     public var snapshot: BKManagerReportSnapshot
+    /// Advanced metrics associated with this value.
     public var advancedMetrics: BKAdvancedPerformanceMetrics
 
     /// Creates a new instance.

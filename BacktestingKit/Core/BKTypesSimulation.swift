@@ -1,30 +1,56 @@
 import Foundation
 
+/// Summary statistics produced by a completed backtest run.
 public struct BKAnalysis: Codable, Equatable {
+    /// Backtest maximum down draw associated with this value.
     public var BKMaxDownDraw: Double
+    /// Backtest maximum down draw percentage associated with this value.
     public var BKMaxDownDrawPct: Double
+    /// Starting capital associated with this value.
     public var startingCapital: Double
+    /// Final capital associated with this value.
     public var finalCapital: Double
+    /// Profit associated with this value.
     public var profit: Double
+    /// Profit percentage associated with this value.
     public var profitPct: Double
+    /// Growth associated with this value.
     public var growth: Double
+    /// Total trades represented by this value.
     public var totalTrades: Int
+    /// Number of bars represented by this value.
     public var barCount: Int
+    /// Maximum drawdown associated with this value.
     public var maxDrawdown: Double
+    /// Maximum drawdown percentage associated with this value.
     public var maxDrawdownPct: Double
+    /// Maximum risk percentage associated with this value.
     public var maxRiskPct: Double?
+    /// Expectency associated with this value.
     public var expectency: Double
+    /// Rmultiple standard deviation associated with this value.
     public var rmultipleStdDev: Double
+    /// System quality associated with this value.
     public var systemQuality: Double?
+    /// Profit factor associated with this value.
     public var profitFactor: Double?
+    /// Proportion profitable associated with this value.
     public var proportionProfitable: Double
+    /// Percent profitable associated with this value.
     public var percentProfitable: Double
+    /// Return on account represented by this value.
     public var returnOnAccount: Double
+    /// Average profit per trade associated with this value.
     public var averageProfitPerTrade: Double
+    /// Number winning trades represented by this value.
     public var numWinningTrades: Int
+    /// Number losing trades represented by this value.
     public var numLosingTrades: Int
+    /// Average winning trade associated with this value.
     public var averageWinningTrade: Double
+    /// Average losing trade associated with this value.
     public var averageLosingTrade: Double
+    /// Expected value associated with this value.
     public var expectedValue: Double
 
     /// Creates a new instance.
@@ -85,7 +111,9 @@ public struct BKAnalysis: Codable, Equatable {
 
 /// Represents `BKTimestampedValue` in the BacktestingKit public API.
 public struct BKTimestampedValue: Codable, Equatable {
+    /// Timestamp associated with this value.
     public var time: Date
+    /// Value associated with this value.
     public var value: Double
 
     /// Creates a new instance.
@@ -97,21 +125,37 @@ public struct BKTimestampedValue: Codable, Equatable {
 
 /// Represents `BKTrade` in the BacktestingKit public API.
 public struct BKTrade: Codable, Equatable {
+    /// Direction associated with this value.
     public var direction: TradeDirection
+    /// Entry time associated with this value.
     public var entryTime: Date
+    /// Entry price associated with this value.
     public var entryPrice: Double
+    /// Exit time associated with this value.
     public var exitTime: Date
+    /// Exit price associated with this value.
     public var exitPrice: Double
+    /// Profit associated with this value.
     public var profit: Double
+    /// Profit percentage associated with this value.
     public var profitPct: Double
+    /// Growth associated with this value.
     public var growth: Double
+    /// Risk percentage associated with this value.
     public var riskPct: Double
+    /// Rmultiple associated with this value.
     public var rmultiple: Double
+    /// Risk series associated with this value.
     public var riskSeries: [BKTimestampedValue]
+    /// Holding period associated with this value.
     public var holdingPeriod: Int
+    /// Exit reason associated with this value.
     public var exitReason: String
+    /// Stop price associated with this value.
     public var stopPrice: Double
+    /// Stop price series associated with this value.
     public var stopPriceSeries: [BKTimestampedValue]
+    /// Profit target associated with this value.
     public var profitTarget: Double
 
     /// Creates a new instance.
@@ -154,12 +198,19 @@ public struct BKTrade: Codable, Equatable {
 
 /// Represents `SimulationRule` in the BacktestingKit public API.
 public struct SimulationRule: Codable, Equatable {
+    /// Indicator one name associated with this value.
     public var indicatorOneName: String
+    /// Indicator one type associated with this value.
     public var indicatorOneType: TechnicalIndicators
+    /// Indicator one figure associated with this value.
     public var indicatorOneFigure: [Double]
+    /// Compare associated with this value.
     public var compare: CompareOption
+    /// Indicator two name associated with this value.
     public var indicatorTwoName: String
+    /// Indicator two type associated with this value.
     public var indicatorTwoType: TechnicalIndicators
+    /// Indicator two figure associated with this value.
     public var indicatorTwoFigure: [Double]
 
     /// Creates a new instance.
@@ -184,13 +235,21 @@ public struct SimulationRule: Codable, Equatable {
 
 /// Represents `SimulationPolicyConfig` in the BacktestingKit public API.
 public struct SimulationPolicyConfig: Codable, Equatable {
+    /// Policy associated with this value.
     public var policy: SimulationPolicy
+    /// Trailing stop loss associated with this value.
     public var trailingStopLoss: Bool
+    /// Stop loss figure associated with this value.
     public var stopLossFigure: Double
+    /// Profit factor associated with this value.
     public var profitFactor: Double
+    /// Rules associated with this value.
     public var entryRules: [SimulationRule]
+    /// Rules associated with this value.
     public var exitRules: [SimulationRule]
+    /// T1 associated with this value.
     public var t1: Double
+    /// T2 associated with this value.
     public var t2: Double
 
     /// Creates a new instance.
@@ -217,14 +276,23 @@ public struct SimulationPolicyConfig: Codable, Equatable {
 
 /// Represents `OptimizePolicyConfig` in the BacktestingKit public API.
 public struct OptimizePolicyConfig: Codable, Equatable {
+    /// Step size associated with this value.
     public var stepSize: Double
+    /// Simple policy associated with this value.
     public var simplePolicy: Bool
+    /// Trailing stop loss associated with this value.
     public var trailingStopLoss: Bool
+    /// Stop loss figure associated with this value.
     public var stopLossFigure: Double
+    /// Profit factor associated with this value.
     public var profitFactor: Double
+    /// Rules associated with this value.
     public var entryRules: [OptimizeRule]
+    /// Rules associated with this value.
     public var exitRules: [OptimizeRule]
+    /// T1 associated with this value.
     public var t1: Double
+    /// T2 associated with this value.
     public var t2: Double
 
     /// Creates a new instance.
@@ -253,14 +321,23 @@ public struct OptimizePolicyConfig: Codable, Equatable {
 
 /// Represents `OptimizeRule` in the BacktestingKit public API.
 public struct OptimizeRule: Codable, Equatable {
+    /// Indicator one name associated with this value.
     public var indicatorOneName: String
+    /// Indicator one type associated with this value.
     public var indicatorOneType: TechnicalIndicators
+    /// Indicator one figure lower associated with this value.
     public var indicatorOneFigureLower: [Double]
+    /// Indicator one figure upper associated with this value.
     public var indicatorOneFigureUpper: [Double]
+    /// Compare associated with this value.
     public var compare: CompareOption
+    /// Indicator two name associated with this value.
     public var indicatorTwoName: String
+    /// Indicator two type associated with this value.
     public var indicatorTwoType: TechnicalIndicators
+    /// Indicator two figure lower associated with this value.
     public var indicatorTwoFigureLower: [Double]
+    /// Indicator two figure upper associated with this value.
     public var indicatorTwoFigureUpper: [Double]
 
     /// Creates a new instance.
@@ -289,6 +366,7 @@ public struct OptimizeRule: Codable, Equatable {
 
 /// Represents `OptimizeRulesContainer` in the BacktestingKit public API.
 public struct OptimizeRulesContainer: Codable, Equatable {
+    /// Rules associated with this value.
     public var rules: [String: [SimulationRule]]
 
     /// Creates a new instance.

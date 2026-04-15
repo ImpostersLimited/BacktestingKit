@@ -7,7 +7,7 @@
         @ContentAndMedia {
             The fastest smoke test is ``BKEngine/runDemo(dataset:csv:log:)``.
 
-            It uses bundled historical CSV resources, so no API key is required.
+            It uses bundled historical CSV resources, so no API key is required. Success looks like a `BKRunSummary` that exposes `summary.metrics.totalReturn` and `summary.metrics.maxDrawdown`.
         }
 
         @Steps {
@@ -37,8 +37,8 @@
                 case .success(let summary):
                     print(summary.symbol)
                     print(summary.barCount)
-                    print(summary.result.totalReturn)
-                    print(summary.result.maxDrawdown)
+                    print(summary.metrics.totalReturn)
+                    print(summary.metrics.maxDrawdown)
                 case .failure(let error):
                     print(error.localizedDescription)
                 }

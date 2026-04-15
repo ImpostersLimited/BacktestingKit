@@ -7,8 +7,24 @@ https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
-### Planned
-- Keep compatibility aliases non-deprecated for the v0.1.x release cycle.
+### Added
+- Additive portfolio orchestration APIs for app and engine integrators:
+  - `BKEngine.PortfolioRequest`
+  - `BKEngine.runPortfolio(...)`
+  - `BKAppFacade.buildPortfolioCSVImportScreenState(...)`
+  - `BKAppFacade.runConfirmedPortfolioCSVImport(...)`
+- Portfolio result/export helpers for stable JSON, CSV, and Markdown reporting without making export bundles the primary runtime contract.
+
+### Changed
+- Beginner-facing documentation now follows a single guided path:
+  - `README.md` is the front door
+  - `docs/ONBOARDING.md` is the canonical markdown tutorial
+  - `docs/GETTING_STARTED.md` is the quick reference
+  - `docs/CHOOSE_YOUR_SURFACE.md` is the routing guide
+  - `docs/INDEX.md` is the documentation map
+- DocC tutorial ordering now matches the markdown onboarding flow, with earlier first-success guidance and clearer app-integration routing.
+- Onboarding/tutorial examples were updated to use current `BKRunSummary` metric access (`summary.metrics.*`) instead of stale `summary.result.*` examples.
+- Compatibility aliases remain non-deprecated for the `v0.1.x` release cycle while canonical docs and examples route new integrations toward the preferred names.
 
 ## [0.1.0] - 2026-02-19
 

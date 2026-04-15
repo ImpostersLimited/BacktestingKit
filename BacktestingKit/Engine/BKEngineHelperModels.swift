@@ -2,12 +2,19 @@ import Foundation
 
 /// Presentation-friendly headline metrics derived from a backtest result.
 public struct BKRunHeadlineMetrics: Codable, Equatable, Sendable {
+    /// Number of trades represented by this value.
     public var tradeCount: Int
+    /// Win rate associated with this value.
     public var winRate: Double
+    /// Total return represented by this value.
     public var totalReturn: Double
+    /// Annualized return associated with this value.
     public var annualizedReturn: Double
+    /// Maximum drawdown associated with this value.
     public var maxDrawdown: Double
+    /// Sharpe ratio associated with this value.
     public var sharpeRatio: Double
+    /// Profit factor associated with this value.
     public var profitFactor: Double
 
     /// Creates a new instance.
@@ -73,10 +80,15 @@ public struct BKRunHeadlineMetrics: Codable, Equatable, Sendable {
 
 /// Compact run summary suitable for onboarding flows and smoke-test output.
 public struct BKRunSummary: Codable, Equatable, Sendable {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Number of bars represented by this value.
     public var barCount: Int
+    /// Start date represented by this value.
     public var startDate: Date?
+    /// End date represented by this value.
     public var endDate: Date?
+    /// Headline metrics associated with this value.
     public var metrics: BKRunHeadlineMetrics
 
     /// Creates a new instance.
@@ -97,11 +109,17 @@ public struct BKRunSummary: Codable, Equatable, Sendable {
 
 /// Preflight-aware preset run result for inline CSV onboarding workflows.
 public struct BKPreflightedRunSummary {
+    /// Ticker symbol associated with this value.
     public var symbol: String
+    /// Preset associated with this value.
     public var preset: BKPresetCatalog
+    /// Preflight validation output associated with this value.
     public var preflight: BKToolPreflightReport
+    /// High-level summary associated with this value.
     public var summary: BKRunSummary?
+    /// Typed failure associated with this value when execution does not succeed.
     public var failure: BKEngineFailure?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -124,12 +142,19 @@ public struct BKPreflightedRunSummary {
 
 /// Structured validation + execution result for v2 inline CSV workflows.
 public struct BKV2ValidatedRunReport {
+    /// Identifier associated with this value.
     public var instrumentID: String
+    /// Preflight validation output associated with this value.
     public var preflight: BKToolPreflightReport
+    /// Request validation associated with this value.
     public var requestValidation: BKValidationReport
+    /// Output associated with this value.
     public var output: BKV2.SimulateConfigOutput?
+    /// Position status associated with this value.
     public var positionStatus: PositionStatus?
+    /// Typed failure associated with this value when execution does not succeed.
     public var failure: BKEngineFailure?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.
@@ -154,11 +179,17 @@ public struct BKV2ValidatedRunReport {
 
 /// Structured validation + execution result for v3 inline CSV workflows.
 public struct BKV3ValidatedRunReport {
+    /// Identifier associated with this value.
     public var instrumentID: String
+    /// Preflight validation output associated with this value.
     public var preflight: BKToolPreflightReport
+    /// Request validation associated with this value.
     public var requestValidation: BKValidationReport
+    /// Detailed report associated with this value.
     public var report: BKSimulationInstrumentReport?
+    /// Typed failure associated with this value when execution does not succeed.
     public var failure: BKEngineFailure?
+    /// Whether the operation completed successfully.
     public var isSuccessful: Bool
 
     /// Creates a new instance.

@@ -5,13 +5,21 @@ import Foundation
 
 /// Represents `Candlestick` in the BacktestingKit public API.
 public struct Candlestick: Equatable, Codable, Sendable {
+    /// Date associated with this value.
     public let date: Date
+    /// Open price for the bar.
     public let open: Double
+    /// High price for the bar.
     public let high: Double
+    /// Low price for the bar.
     public let low: Double
+    /// Close price for the bar.
     public let close: Double
+    /// Adjusted close price for the bar when available.
     public let adjustedClose: Double?
+    /// Trading volume for the bar.
     public let volume: Double
+    /// Technical indicator values keyed by indicator name.
     public var technicalIndicators: [String: Double]
 
     /// Creates a new instance.
@@ -35,6 +43,12 @@ public struct Candlestick: Equatable, Codable, Sendable {
         self.technicalIndicators = technicalIndicators
     }
 
+    /// Parses a simple OHLCV CSV payload into candlesticks.
+    ///
+    /// - Parameters:
+    ///   - csv: CSV text whose first row is the header.
+    ///   - dateFormat: `DateFormatter` pattern used to decode the first column.
+    /// - Returns: Parsed candlesticks. Rows that fail validation are skipped.
     public static func fromCSV(_ csv: String, dateFormat: String = "yyyy-MM-dd") -> [Candlestick] {
         var candlesticks: [Candlestick] = []
         let lines = csv.split(separator: "\n").map { String($0) }

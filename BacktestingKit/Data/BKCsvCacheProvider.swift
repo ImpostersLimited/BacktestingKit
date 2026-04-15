@@ -1,7 +1,10 @@
 import Foundation
 
+/// Configuration controlling the size and retention policy of the in-memory CSV cache.
 public struct BKCsvCacheConfiguration: Equatable, Codable {
+    /// Maximum entries associated with this value.
     public var maxEntries: Int
+    /// Time to live seconds associated with this value.
     public var timeToLiveSeconds: TimeInterval
 
     /// Creates a new instance.
@@ -13,10 +16,14 @@ public struct BKCsvCacheConfiguration: Equatable, Codable {
 
 /// Represents `BKCsvCacheStats` in the BacktestingKit public API.
 public struct BKCsvCacheStats: Equatable, Codable {
+    /// Number of cache hits recorded.
     public var hits: Int
+    /// Number of cache misses recorded.
     public var misses: Int
+    /// Number of cache entries currently stored.
     public var entries: Int
 
+    /// Cache hit rate derived from hits and misses.
     public var hitRate: Double {
         let total = hits + misses
         guard total > 0 else { return 0 }
@@ -116,6 +123,7 @@ actor BKInMemoryCsvCache {
     }
 }
 
+/// `BKRawCsvProvider` decorator that caches fetched CSV payloads in memory.
 public final class BKCachedCsvProvider: BKRawCsvProvider {
     private let wrapped: BKRawCsvProvider
     let cache: BKInMemoryCsvCache
@@ -123,8 +131,10 @@ public final class BKCachedCsvProvider: BKRawCsvProvider {
     private var observerID: UUID?
     private var lastMetrics: BKCsvCacheStats
     private let metricsLock = NSLock()
+    /// Snapshot store used to retain cache metrics history.
     public let metricsHistory: any BKCacheMetricsSnapshotStoring
 
+    /// Headline metrics associated with this value.
     public var metrics: BKCsvCacheStats {
         metricsLock.lock()
         defer { metricsLock.unlock() }

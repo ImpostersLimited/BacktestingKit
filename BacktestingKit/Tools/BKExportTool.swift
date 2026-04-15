@@ -5,6 +5,7 @@ public enum BKExportError: LocalizedError, Equatable {
     case encodingFailed(String)
     case emptyData(String)
 
+    /// Localized description of the error.
     public var errorDescription: String? {
         switch self {
         case .encodingFailed(let message):

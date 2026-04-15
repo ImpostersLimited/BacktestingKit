@@ -7,6 +7,7 @@ public protocol BKCacheMetricsSnapshotStoring {
     func appendSnapshot(_ snapshot: BKCacheMetricsSnapshot)
 }
 
+/// Ring-buffer store for retaining and exporting recent cache metrics snapshots.
 public final class BKCacheMetricsHistory: BKCacheMetricsSnapshotStoring {
     private let capacity: Int
     private var snapshots: [BKCacheMetricsSnapshot]

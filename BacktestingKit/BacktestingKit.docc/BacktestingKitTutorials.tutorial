@@ -1,11 +1,11 @@
 @Tutorials(name: "BacktestingKit Tutorials") {
     @Intro(title: "Build with BacktestingKit") {
-        Start with the beginner onboarding path, then move into the canonical flows for running v3 and v2 simulations, helper workflows, manager recipes, and tooling utilities.
+        Start with the first-success path, then move through onboarding, CSV import, app integration, and the follow-on helper, engine, manager, and tooling flows.
     }
 
     @Chapter(name: "Onboarding") {
-        @TutorialReference(tutorial: "doc:BKPackageOnboardingTutorial")
         @TutorialReference(tutorial: "doc:BKInstallAndFirstSuccessTutorial")
+        @TutorialReference(tutorial: "doc:BKPackageOnboardingTutorial")
         @TutorialReference(tutorial: "doc:BKCSVImportTutorial")
         @TutorialReference(tutorial: "doc:BKAppIntegrationTutorial")
     }

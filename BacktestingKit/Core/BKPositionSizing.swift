@@ -7,7 +7,9 @@ public protocol BKPositionSizingModel {
 
 /// Represents `BKVolatilityTargetingSizer` in the BacktestingKit public API.
 public struct BKVolatilityTargetingSizer: BKPositionSizingModel {
+    /// Target annualized volatility associated with this value.
     public let targetAnnualizedVolatility: Double
+    /// Maximum gross leverage associated with this value.
     public let maxGrossLeverage: Double
 
     /// Creates a new instance.
@@ -27,7 +29,9 @@ public struct BKVolatilityTargetingSizer: BKPositionSizingModel {
 
 /// Represents `BKFixedFractionalSizer` in the BacktestingKit public API.
 public struct BKFixedFractionalSizer: BKPositionSizingModel {
+    /// Risk fraction associated with this value.
     public let riskFraction: Double
+    /// Fallback risk per unit fraction associated with this value.
     public let fallbackRiskPerUnitFraction: Double
 
     /// Creates a new instance.
@@ -47,8 +51,11 @@ public struct BKFixedFractionalSizer: BKPositionSizingModel {
 
 /// Represents `BKKellyCappedSizer` in the BacktestingKit public API.
 public struct BKKellyCappedSizer: BKPositionSizingModel {
+    /// Expected return associated with this value.
     public let expectedReturn: Double
+    /// Return variance associated with this value.
     public let returnVariance: Double
+    /// Maximum weight associated with this value.
     public let maxWeight: Double
 
     /// Creates a new instance.

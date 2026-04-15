@@ -1,7 +1,10 @@
 import Foundation
 
+/// Retry policy applied to Alpha Vantage requests before surfacing a provider failure.
 public struct AlphaVantageRetryPolicy: Equatable, Sendable {
+    /// Maximum attempts associated with this value.
     public var maxAttempts: Int
+    /// Initial backoff seconds associated with this value.
     public var initialBackoffSeconds: Double
 
     /// Creates a new instance.
@@ -59,6 +62,7 @@ public protocol BKRawCsvProvider {
 
 /// Inline CSV provider for app-facing helper workflows and tests.
 public struct BKInlineCsvProvider: BKRawCsvProvider, Sendable {
+    /// CSV associated with this value.
     public let csv: String
 
     /// Creates a new instance.
