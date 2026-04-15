@@ -43,6 +43,9 @@
 - Verification: `swift test` passed with 122 tests and 0 failures.
 - Verification: `swift run BacktestingKitTrialDemo` exited successfully.
 - Verification: `bash tools/parity/run_parity.sh` correctly reported that no local JS engine checkout is present, so parity remains an environment-dependent release gate rather than a package failure in this worktree.
+- Release candidate branch pushed: `codex/release-prep-v0.1.x`
+- Draft PR opened: `#4`
+- Final public tag/release intentionally paused pending one decision: release `v0.1.1` directly from this branch or merge to `main` first. The parity baseline announcement also still needs an explicit JS engine revision if we want that checklist item fully closed.
 
 - Reshaped the beginner-facing docs so `README.md` is now a lighter front door, `docs/ONBOARDING.md` is the canonical markdown tutorial, `docs/GETTING_STARTED.md` is the compact quick reference, `docs/CHOOSE_YOUR_SURFACE.md` is the routing guide, and `docs/INDEX.md` is the docs map rather than a competing onboarding page.
 - Promoted the existing DocC tutorial track by surfacing `BacktestingKit/BacktestingKit.docc` earlier in the markdown docs, reordering the DocC onboarding chapter around first success -> onboarding -> CSV import -> app integration, and adding lightweight success-oriented framing to the touched tutorial pages.
