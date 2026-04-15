@@ -486,6 +486,46 @@ final class BacktestingKitAppFacadeTests: XCTestCase {
         XCTAssertTrue(state.issues.contains(where: { $0.symbol == "BROKEN" }))
     }
 
+    func testBuildPortfolioCSVImportScreenStateRejectsDuplicateSleeves() {
+        let state = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "DUPES",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .smaCrossover),
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .emaCrossover),
+            ],
+            allocation: .sleeveWeights,
+            maxRows: 2
+        )
+
+        XCTAssertEqual(state.status, .invalid)
+        XCTAssertFalse(state.isReadyToContinue)
+        XCTAssertTrue(state.issues.contains(where: {
+            $0.symbol == "DUPES"
+                && $0.title == "Portfolio"
+                && $0.items.contains(where: { $0.code == "portfolio_duplicate_symbols" })
+        }))
+    }
+
+    func testBuildPortfolioCSVImportScreenStateRejectsExplicitWeightCountMismatch() {
+        let state = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "MISMATCH",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .smaCrossover),
+                BKAppPortfolioImportItem(symbol: "MSFT", csv: inlineCsv, preset: .emaCrossover),
+            ],
+            allocation: .explicit([1.0]),
+            maxRows: 2
+        )
+
+        XCTAssertEqual(state.status, .invalid)
+        XCTAssertFalse(state.isReadyToContinue)
+        XCTAssertTrue(state.issues.contains(where: {
+            $0.symbol == "MISMATCH"
+                && $0.title == "Portfolio"
+                && $0.items.contains(where: { $0.code == "portfolio_explicit_weight_count_mismatch" })
+        }))
+    }
+
     func testRunConfirmedPortfolioCSVImportUsesInferredSleeveSettings() {
         let screenState = BKAppFacade.buildPortfolioCSVImportScreenState(
             portfolioID: "AUTO",

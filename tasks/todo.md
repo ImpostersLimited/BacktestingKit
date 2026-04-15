@@ -1,5 +1,12 @@
 # Active Todo
 
+## 2026-04-15 Review Comment Fixes
+
+- [completed] Reproduce the two PR review comments with failing tests for explicit zero-total allocations and portfolio review-state validation.
+- [completed] Update portfolio allocation resolution so invalid explicit zero-total weights fail instead of silently equal-weighting successful sleeves.
+- [completed] Add portfolio-level validation to the app-facing review state for duplicate symbols and explicit weight-count mismatches.
+- [completed] Re-run targeted and full test verification after the fix.
+
 ## 2026-04-15 Release Prep
 
 - [completed] Audit release-facing metadata, roadmap/checklist state, and current verification evidence.
@@ -33,6 +40,13 @@
 - [completed] Record results and any follow-up gaps in the review notes below.
 
 ## Review
+
+- Added regression coverage for two review-reported cases: explicit allocations that collapse to a non-positive total across successful sleeves, and app-facing basket review states that previously ignored duplicate-symbol and explicit-weight-count portfolio constraints.
+- `BKPortfolioOrchestration` now keeps zero weights and emits a `portfolio-allocation` failure for invalid explicit zero-total allocations instead of silently converting them into equal-weight runs.
+- `BKAppFacade.buildPortfolioCSVImportScreenState(...)` now adds portfolio-scoped validation issues and marks the basket invalid before execution when duplicate sleeve symbols or explicit weight-count mismatches are present.
+- Verification: `swift test --filter 'BacktestingKitPortfolioTests/testRunPortfolioRejectsExplicitWeightsWhenSuccessfulSleevesResolveToNonPositiveTotal|BacktestingKitAppFacadeTests/testBuildPortfolioCSVImportScreenStateRejectsDuplicateSleeves|BacktestingKitAppFacadeTests/testBuildPortfolioCSVImportScreenStateRejectsExplicitWeightCountMismatch'`
+- Verification: `swift test --filter 'BacktestingKitPortfolioTests|BacktestingKitAppFacadeTests'`
+- Verification: `swift test` passed with 125 tests and 0 failures.
 
 - Prepared the current patch-track release metadata with an unreleased changelog entry, a new `docs/RELEASE_NOTES_v0.1.x.md` draft, and doc index/readme references that no longer hardcode `v0.1.0` as the active release track.
 - Synced the release lane in `ROADMAP.md` to reflect the work that is actually complete: API naming audit, DocC final pass, CI matrix finalization, and prepared `v0.1.x` release notes.

@@ -321,6 +321,50 @@ final class BacktestingKitPortfolioTests: XCTestCase {
         XCTAssertTrue(report.failures.contains(where: { $0.stage == "portfolio-allocation" }))
     }
 
+    func testRunPortfolioRejectsExplicitWeightsWhenSuccessfulSleevesResolveToNonPositiveTotal() {
+        let first = makeSleeve(
+            symbol: "FIRST",
+            config: BKScenarioConfig(
+                symbol: "FIRST",
+                barCount: 64,
+                driftPerBar: 0.0007,
+                volatility: 0.01,
+                seed: 101,
+                strategy: .smaCrossover
+            )
+        )
+        let second = makeSleeve(
+            symbol: "SECOND",
+            config: BKScenarioConfig(
+                symbol: "SECOND",
+                barCount: 64,
+                driftPerBar: 0.0006,
+                volatility: 0.012,
+                seed: 202,
+                strategy: .smaCrossover
+            )
+        )
+
+        let report = BKEngine.runPortfolio(
+            .init(
+                portfolioID: "ZERO_TOTAL",
+                sleeves: [first, second],
+                allocation: .explicit([0, 0])
+            )
+        )
+
+        XCTAssertFalse(report.isSuccessful)
+        XCTAssertTrue(report.isPartialSuccess)
+        XCTAssertEqual(report.succeededSleeveCount, 2)
+        XCTAssertEqual(report.failedSleeveCount, 0)
+        XCTAssertNil(report.summary)
+        XCTAssertEqual(report.sleeveReports.map(\.resolvedWeight), [0, 0])
+        XCTAssertTrue(report.failures.contains(where: {
+            $0.stage == "portfolio-allocation"
+                && $0.message.localizedStandardContains("positive total")
+        }))
+    }
+
     func testExportToolExportsPortfolioRunBundleAndMarkdownSummary() {
         let first = makeSleeve(
             symbol: "EXPORT_A",

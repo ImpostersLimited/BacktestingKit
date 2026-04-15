@@ -218,7 +218,16 @@ private func resolvePortfolioWeights(
     var failures: [BKEngineFailure] = []
     let successIndices = Set(successfulContexts.keys)
 
-    func normalizedSuccessfulWeights(from rawWeights: [Double]) -> [Double] {
+    enum ZeroTotalBehavior {
+        case equalWeight
+        case keepZero
+        case fail(String)
+    }
+
+    func normalizedSuccessfulWeights(
+        from rawWeights: [Double],
+        zeroTotalBehavior: ZeroTotalBehavior
+    ) -> BKPortfolioWeightResolution {
         var filtered = rawWeights.enumerated().map { index, weight -> Double in
             guard successIndices.contains(index) else { return 0 }
             return max(weight, 0)
@@ -226,19 +235,43 @@ private func resolvePortfolioWeights(
 
         let total = filtered.reduce(0, +)
         guard total > 0 else {
-            let equalWeight = successIndices.isEmpty ? 0 : 1.0 / Double(successIndices.count)
-            return filtered.enumerated().map { index, _ in
-                successIndices.contains(index) ? equalWeight : 0
+            switch zeroTotalBehavior {
+            case .equalWeight:
+                let equalWeight = successIndices.isEmpty ? 0 : 1.0 / Double(successIndices.count)
+                return BKPortfolioWeightResolution(
+                    weights: filtered.enumerated().map { index, _ in
+                        successIndices.contains(index) ? equalWeight : 0
+                    },
+                    failures: []
+                )
+            case .keepZero:
+                return BKPortfolioWeightResolution(weights: filtered, failures: [])
+            case .fail(let message):
+                return BKPortfolioWeightResolution(
+                    weights: filtered,
+                    failures: [
+                        makePortfolioValidationFailure(
+                            instrumentID: normalizedPortfolioID(request.portfolioID),
+                            stage: "portfolio-allocation",
+                            message: message,
+                            metadata: [
+                                "successfulSleeveCount": String(successIndices.count),
+                                "allocationMode": request.allocation.mode.rawValue,
+                            ]
+                        )
+                    ]
+                )
             }
         }
 
         for index in filtered.indices {
             filtered[index] /= total
         }
-        return filtered
+        return BKPortfolioWeightResolution(weights: filtered, failures: [])
     }
 
     let rawWeights: [Double]
+    let zeroTotalBehavior: ZeroTotalBehavior
     switch request.allocation.mode {
     case .explicit:
         guard let explicitWeights = request.allocation.explicitWeights,
@@ -255,12 +288,15 @@ private func resolvePortfolioWeights(
                 )
             )
             rawWeights = Array(repeating: 0, count: count)
+            zeroTotalBehavior = .keepZero
             break
         }
         rawWeights = explicitWeights
+        zeroTotalBehavior = .fail("Explicit portfolio weights must resolve to a positive total across successful sleeves.")
 
     case .sleeveWeights:
         rawWeights = sleeveReports.map { $0.requestedWeight ?? 0 }
+        zeroTotalBehavior = .equalWeight
 
     case .riskParity:
         let volatilities = sleeveReports.enumerated().map { index, report -> Double in
@@ -268,6 +304,7 @@ private func resolvePortfolioWeights(
             return successfulContexts[index]?.annualizedVolatility ?? 0
         }
         rawWeights = BKPortfolioPresets.riskParityWeights(annualizedVolatilities: volatilities)
+        zeroTotalBehavior = .equalWeight
 
     case .riskOnRiskOff:
         let riskOnIndex = request.allocation.riskOnIndex ?? 0
@@ -285,6 +322,7 @@ private func resolvePortfolioWeights(
                 )
             )
             rawWeights = Array(repeating: 0, count: count)
+            zeroTotalBehavior = .keepZero
             break
         }
 
@@ -299,12 +337,15 @@ private func resolvePortfolioWeights(
         working[riskOnIndex] = successIndices.contains(riskOnIndex) ? pairWeights[0] : 0
         working[riskOffIndex] = successIndices.contains(riskOffIndex) ? pairWeights[1] : 0
         rawWeights = working
+        zeroTotalBehavior = .equalWeight
     }
 
-    return BKPortfolioWeightResolution(
-        weights: normalizedSuccessfulWeights(from: rawWeights),
-        failures: failures
+    let normalizedWeights = normalizedSuccessfulWeights(
+        from: rawWeights,
+        zeroTotalBehavior: zeroTotalBehavior
     )
+    failures.append(contentsOf: normalizedWeights.failures)
+    return BKPortfolioWeightResolution(weights: normalizedWeights.weights, failures: failures)
 }
 
 private func finalizePortfolioRun(

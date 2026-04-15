@@ -610,6 +610,9 @@ public enum BKAppFacade {
         rebalancePolicy: BKPortfolioRebalancePolicy = .none,
         maxRows: Int = 5
     ) -> BKAppPortfolioImportScreenState {
+        let normalizedPortfolioID = portfolioID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "PORTFOLIO"
+            : portfolioID
         let sleeveStates = sleeves.map { sleeve in
             BKAppPortfolioImportItemState(
                 request: sleeve,
@@ -621,7 +624,7 @@ public enum BKAppFacade {
             )
         }
 
-        let issues = sleeveStates.flatMap { sleeveState in
+        let sleeveIssues = sleeveStates.flatMap { sleeveState in
             sleeveState.screenState.issues.map { section in
                 BKAppPortfolioImportIssueSection(
                     symbol: sleeveState.request.symbol,
@@ -630,9 +633,17 @@ public enum BKAppFacade {
                 )
             }
         }
+        let portfolioIssues = buildPortfolioImportIssueSections(
+            portfolioID: normalizedPortfolioID,
+            sleeves: sleeveStates,
+            allocation: allocation
+        )
+        let issues = sleeveIssues + portfolioIssues
 
         let status: BKAppCSVImportScreenStatus
-        if sleeveStates.isEmpty || sleeveStates.contains(where: { $0.screenState.status == .invalid }) {
+        if sleeveStates.isEmpty
+            || !portfolioIssues.isEmpty
+            || sleeveStates.contains(where: { $0.screenState.status == .invalid }) {
             status = .invalid
         } else if sleeveStates.contains(where: { $0.screenState.status == .needsReview }) {
             status = .needsReview
@@ -641,7 +652,7 @@ public enum BKAppFacade {
         }
 
         return BKAppPortfolioImportScreenState(
-            portfolioID: portfolioID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "PORTFOLIO" : portfolioID,
+            portfolioID: normalizedPortfolioID,
             sleeves: sleeveStates,
             allocation: allocation,
             rebalancePolicy: rebalancePolicy,
@@ -1482,6 +1493,83 @@ public enum BKAppFacade {
         }
 
         return sections
+    }
+
+    private static func buildPortfolioImportIssueSections(
+        portfolioID: String,
+        sleeves: [BKAppPortfolioImportItemState],
+        allocation: BKPortfolioAllocationInput
+    ) -> [BKAppPortfolioImportIssueSection] {
+        var items: [BKAppCSVImportIssueItem] = []
+        let duplicateSymbols = duplicatePortfolioImportSymbols(in: sleeves)
+        if !duplicateSymbols.isEmpty {
+            items.append(
+                BKAppCSVImportIssueItem(
+                    severity: .error,
+                    code: "portfolio_duplicate_symbols",
+                    message: "Portfolio sleeve symbols must be unique. Duplicates: \(duplicateSymbols.joined(separator: ", ")).",
+                    source: .validation
+                )
+            )
+        }
+
+        switch allocation.mode {
+        case .explicit:
+            let weights = allocation.explicitWeights ?? []
+            if weights.count != sleeves.count {
+                items.append(
+                    BKAppCSVImportIssueItem(
+                        severity: .error,
+                        code: "portfolio_explicit_weight_count_mismatch",
+                        message: "Explicit portfolio weights must match the sleeve count.",
+                        source: .validation
+                    )
+                )
+            }
+
+        case .riskOnRiskOff:
+            let count = sleeves.count
+            let riskOnIndex = allocation.riskOnIndex ?? 0
+            let riskOffIndex = allocation.riskOffIndex ?? 1
+            if !(riskOnIndex >= 0
+                && riskOnIndex < count
+                && riskOffIndex >= 0
+                && riskOffIndex < count
+                && riskOnIndex != riskOffIndex) {
+                items.append(
+                    BKAppCSVImportIssueItem(
+                        severity: .error,
+                        code: "portfolio_risk_on_risk_off_indices",
+                        message: "Risk-on / risk-off allocation requires two distinct valid sleeve indices.",
+                        source: .validation
+                    )
+                )
+            }
+
+        case .sleeveWeights, .riskParity:
+            break
+        }
+
+        guard !items.isEmpty else { return [] }
+        return [BKAppPortfolioImportIssueSection(symbol: portfolioID, title: "Portfolio", items: items)]
+    }
+
+    private static func duplicatePortfolioImportSymbols(
+        in sleeves: [BKAppPortfolioImportItemState]
+    ) -> [String] {
+        var seen: Set<String> = []
+        var duplicates: Set<String> = []
+
+        for sleeve in sleeves {
+            let symbol = sleeve.request.symbol.trimmingCharacters(in: .whitespacesAndNewlines)
+            if seen.contains(symbol) {
+                duplicates.insert(symbol)
+            } else {
+                seen.insert(symbol)
+            }
+        }
+
+        return duplicates.sorted()
     }
 
     private static func importScreenStatus(
