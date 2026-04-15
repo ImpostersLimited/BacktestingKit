@@ -526,6 +526,29 @@ final class BacktestingKitAppFacadeTests: XCTestCase {
         }))
     }
 
+    func testBuildPortfolioCSVImportScreenStateRejectsExplicitWeightTotalThatIsNotPositive() {
+        let state = BKAppFacade.buildPortfolioCSVImportScreenState(
+            portfolioID: "ZERO_TOTAL",
+            sleeves: [
+                BKAppPortfolioImportItem(symbol: "AAPL", csv: inlineCsv, preset: .smaCrossover),
+                BKAppPortfolioImportItem(symbol: "MSFT", csv: inlineCsv, preset: .emaCrossover),
+            ],
+            allocation: .explicit([0, -1]),
+            maxRows: 2
+        )
+
+        XCTAssertEqual(state.status, .invalid)
+        XCTAssertFalse(state.isReadyToContinue)
+        XCTAssertTrue(state.issues.contains(where: {
+            $0.symbol == "ZERO_TOTAL"
+                && $0.title == "Portfolio"
+                && $0.items.contains(where: {
+                    $0.code == "portfolio_explicit_weight_total_invalid"
+                        && $0.message.localizedStandardContains("positive total")
+                })
+        }))
+    }
+
     func testRunConfirmedPortfolioCSVImportUsesInferredSleeveSettings() {
         let screenState = BKAppFacade.buildPortfolioCSVImportScreenState(
             portfolioID: "AUTO",

@@ -1525,6 +1525,20 @@ public enum BKAppFacade {
                         source: .validation
                     )
                 )
+            } else {
+                let clampedTotal = weights.reduce(0.0) { partial, weight in
+                    partial + max(weight, 0)
+                }
+                if clampedTotal <= 0 {
+                    items.append(
+                        BKAppCSVImportIssueItem(
+                            severity: .error,
+                            code: "portfolio_explicit_weight_total_invalid",
+                            message: "Explicit portfolio weights must resolve to a positive total.",
+                            source: .validation
+                        )
+                    )
+                }
             }
 
         case .riskOnRiskOff:

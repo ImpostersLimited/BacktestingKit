@@ -1,5 +1,12 @@
 # Active Todo
 
+## 2026-04-15 Follow-up Review Comment Fixes
+
+- [completed] Reproduce the fail-fast portfolio summary bug and the explicit zero-total review-state bug with failing regression tests.
+- [completed] Update portfolio orchestration so fail-fast runs still resolve weights before finalization.
+- [completed] Extend app-facing portfolio review validation to reject explicit allocations whose clamped total is not positive.
+- [completed] Re-run targeted and full Swift test verification, then record the result.
+
 ## 2026-04-15 Review Comment Fixes
 
 - [completed] Reproduce the two PR review comments with failing tests for explicit zero-total allocations and portfolio review-state validation.
@@ -47,6 +54,13 @@
 - Verification: `swift test --filter 'BacktestingKitPortfolioTests/testRunPortfolioRejectsExplicitWeightsWhenSuccessfulSleevesResolveToNonPositiveTotal|BacktestingKitAppFacadeTests/testBuildPortfolioCSVImportScreenStateRejectsDuplicateSleeves|BacktestingKitAppFacadeTests/testBuildPortfolioCSVImportScreenStateRejectsExplicitWeightCountMismatch'`
 - Verification: `swift test --filter 'BacktestingKitPortfolioTests|BacktestingKitAppFacadeTests'`
 - Verification: `swift test` passed with 125 tests and 0 failures.
+
+- Added follow-up regression coverage for two more review-reported cases: fail-fast portfolio runs now resolve processed successful-sleeve weights before finalization, and portfolio import review now rejects explicit allocations whose clamped total is not positive.
+- `BKPortfolioOrchestration` no longer returns early on fail-fast failures before weight resolution; it breaks out, resolves weights against the full request, and finalizes with correct resolved weights and aggregate metrics for the already-successful sleeves.
+- `BKAppFacade.buildPortfolioCSVImportScreenState(...)` now emits `portfolio_explicit_weight_total_invalid` when explicit review weights clamp to a non-positive total, so `isReadyToContinue` no longer advertises a deterministically invalid run as ready.
+- Verification: `swift test --filter 'BacktestingKitPortfolioTests/testRunPortfolioFailFastResolvesSuccessfulSleeveWeightsBeforeFinalization|BacktestingKitAppFacadeTests/testBuildPortfolioCSVImportScreenStateRejectsExplicitWeightTotalThatIsNotPositive'`
+- Verification: `swift test --filter 'BacktestingKitPortfolioTests|BacktestingKitAppFacadeTests'`
+- Verification: `swift test` passed with 127 tests and 0 failures.
 
 - Prepared the current patch-track release metadata with an unreleased changelog entry, a new `docs/RELEASE_NOTES_v0.1.x.md` draft, and doc index/readme references that no longer hardcode `v0.1.0` as the active release track.
 - Synced the release lane in `ROADMAP.md` to reflect the work that is actually complete: API naming audit, DocC final pass, CI matrix finalization, and prepared `v0.1.x` release notes.

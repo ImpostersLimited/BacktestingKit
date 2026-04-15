@@ -365,6 +365,76 @@ final class BacktestingKitPortfolioTests: XCTestCase {
         }))
     }
 
+    func testRunPortfolioFailFastResolvesSuccessfulSleeveWeightsBeforeFinalization() {
+        let valid = makeSleeve(
+            symbol: "VALID",
+            config: BKScenarioConfig(
+                symbol: "VALID",
+                barCount: 64,
+                driftPerBar: 0.0009,
+                volatility: 0.01,
+                seed: 41,
+                strategy: .smaCrossover
+            )
+        )
+        let invalid = BKPortfolioSleeveRequest(
+            symbol: "BROKEN",
+            csv: "",
+            preset: .smaCrossover
+        )
+        let skipped = makeSleeve(
+            symbol: "SKIPPED",
+            config: BKScenarioConfig(
+                symbol: "SKIPPED",
+                barCount: 64,
+                driftPerBar: 0.0003,
+                volatility: 0.012,
+                seed: 42,
+                strategy: .smaCrossover
+            )
+        )
+
+        let standalone = BKEngine.preflightAndRunCSV(
+            symbol: valid.symbol,
+            csv: valid.csv,
+            preset: valid.preset,
+            dateFormat: valid.dateFormat,
+            reverse: valid.reverse,
+            columnMapping: valid.columnMapping
+        )
+        guard let validSummary = standalone.summary else {
+            XCTFail("Expected standalone valid sleeve summary")
+            return
+        }
+
+        let report = BKEngine.runPortfolio(
+            .init(
+                portfolioID: "FAIL_FAST_WEIGHTS",
+                sleeves: [valid, invalid, skipped],
+                allocation: .explicit([0.4, 0.2, 0.4]),
+                continueOnFailure: false
+            )
+        )
+
+        XCTAssertTrue(report.isSuccessful)
+        XCTAssertTrue(report.isPartialSuccess)
+        XCTAssertEqual(report.succeededSleeveCount, 1)
+        XCTAssertEqual(report.failedSleeveCount, 1)
+        XCTAssertEqual(report.sleeveReports.count, 2)
+        assertWeights(report.sleeveReports.map(\.resolvedWeight), equal: [1, 0])
+
+        guard let summary = report.summary else {
+            XCTFail("Expected fail-fast portfolio summary")
+            return
+        }
+
+        XCTAssertEqual(summary.metrics.totalReturn, validSummary.metrics.totalReturn, accuracy: 1e-12)
+        XCTAssertEqual(summary.metrics.annualizedReturn, validSummary.metrics.annualizedReturn, accuracy: 1e-12)
+        XCTAssertEqual(summary.metrics.maxDrawdown, validSummary.metrics.maxDrawdown, accuracy: 1e-12)
+        XCTAssertEqual(summary.metrics.sharpeRatio, validSummary.metrics.sharpeRatio, accuracy: 1e-12)
+        XCTAssertEqual(summary.metrics.profitFactor, validSummary.metrics.profitFactor, accuracy: 1e-12)
+    }
+
     func testExportToolExportsPortfolioRunBundleAndMarkdownSummary() {
         let first = makeSleeve(
             symbol: "EXPORT_A",

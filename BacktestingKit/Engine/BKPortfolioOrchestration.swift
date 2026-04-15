@@ -52,6 +52,7 @@ public extension BKEngine {
 
         var successfulContexts: [Int: BKPortfolioSuccessfulSleeveContext] = [:]
         var failures: [BKEngineFailure] = []
+        var stoppedOnFailure = false
 
         for (index, sleeve) in request.sleeves.enumerated() {
             let run = preflightAndRunCSV(
@@ -101,22 +102,14 @@ public extension BKEngine {
                     )
                 )
                 if !request.continueOnFailure {
-                    return finalizePortfolioRun(
-                        portfolioID: portfolioID,
-                        allocation: request.allocation,
-                        rebalancePolicy: request.rebalancePolicy,
-                        sleeveReports: sleeveReports,
-                        successfulContexts: successfulContexts,
-                        failures: failures,
-                        requestLevelFailures: []
-                    )
+                    stoppedOnFailure = true
+                    break
                 }
             }
         }
 
         let weightResolution = resolvePortfolioWeights(
             request: request,
-            sleeveReports: sleeveReports,
             successfulContexts: successfulContexts
         )
         failures.append(contentsOf: weightResolution.failures)
@@ -125,6 +118,18 @@ public extension BKEngine {
             var updated = sleeveReport
             updated.resolvedWeight = weightResolution.weights[index]
             return updated
+        }
+
+        if stoppedOnFailure {
+            return finalizePortfolioRun(
+                portfolioID: portfolioID,
+                allocation: request.allocation,
+                rebalancePolicy: request.rebalancePolicy,
+                sleeveReports: updatedSleeves,
+                successfulContexts: successfulContexts,
+                failures: failures,
+                requestLevelFailures: weightResolution.failures
+            )
         }
 
         return finalizePortfolioRun(
@@ -207,10 +212,9 @@ private func annualizedVolatility(from bars: [BKBar]) -> Double {
 
 private func resolvePortfolioWeights(
     request: BKPortfolioRequest,
-    sleeveReports: [BKPortfolioSleeveRunReport],
     successfulContexts: [Int: BKPortfolioSuccessfulSleeveContext]
 ) -> BKPortfolioWeightResolution {
-    let count = sleeveReports.count
+    let count = request.sleeves.count
     guard count > 0 else {
         return BKPortfolioWeightResolution(weights: [], failures: [])
     }
@@ -295,11 +299,11 @@ private func resolvePortfolioWeights(
         zeroTotalBehavior = .fail("Explicit portfolio weights must resolve to a positive total across successful sleeves.")
 
     case .sleeveWeights:
-        rawWeights = sleeveReports.map { $0.requestedWeight ?? 0 }
+        rawWeights = request.sleeves.map { $0.targetWeight ?? 0 }
         zeroTotalBehavior = .equalWeight
 
     case .riskParity:
-        let volatilities = sleeveReports.enumerated().map { index, report -> Double in
+        let volatilities = (0..<count).map { index -> Double in
             guard successIndices.contains(index) else { return 0 }
             return successfulContexts[index]?.annualizedVolatility ?? 0
         }
