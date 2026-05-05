@@ -1,5 +1,12 @@
 # Active Todo
 
+## 2026-05-02 Final Checkup
+
+- [in-progress] Check current git/worktree state, branch context, and local task/release notes.
+- [pending] Run package build/test verification from the live checkout.
+- [pending] Review release/parity/manual gate status for any remaining blockers.
+- [pending] Record the final checkup result in this file.
+
 ## 2026-04-15 Follow-up Review Comment Fixes
 
 - [completed] Reproduce the fail-fast portfolio summary bug and the explicit zero-total review-state bug with failing regression tests.
