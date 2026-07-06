@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// `BKRawCsvProvider` implementation backed by the Alpha Vantage HTTP API.
 public struct AlphaVantageClient: BKRawCsvProvider {
@@ -112,7 +115,24 @@ public struct AlphaVantageClient: BKRawCsvProvider {
                    case .failure(let limiterError) = await limiter.acquire() {
                     return .failure(limiterError)
                 }
+                #if os(Linux)
+                let (data, response): (Data, URLResponse) = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(Data, URLResponse), Error>) in
+                    let task = session.dataTask(with: request) { data, response, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        guard let data, let response else {
+                            continuation.resume(throwing: AlphaVantageClientError.invalidHTTPResponse)
+                            return
+                        }
+                        continuation.resume(returning: (data, response))
+                    }
+                    task.resume()
+                }
+                #else
                 let (data, response) = try await session.data(for: request)
+                #endif
                 guard let http = response as? HTTPURLResponse else {
                     throw AlphaVantageClientError.invalidHTTPResponse
                 }
