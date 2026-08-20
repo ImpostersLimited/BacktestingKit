@@ -1,7 +1,7 @@
 import Foundation
 
 /// Defines the `BKV2SimulationDriving` contract used by BacktestingKit.
-public protocol BKV2SimulationDriving {
+public protocol BKV2SimulationDriving: Sendable {
     func simulateInstrument(
         instrumentID: String,
         config: BKV2.SimulationPolicyConfig,
@@ -13,7 +13,7 @@ public protocol BKV2SimulationDriving {
 }
 
 /// Defines the `BKV3SimulationDriving` contract used by BacktestingKit.
-public protocol BKV3SimulationDriving {
+public protocol BKV3SimulationDriving: Sendable {
     func simulateInstrumentDetailed(
         _ instrument: BKV3_InstrumentInfo,
         p1: Double,

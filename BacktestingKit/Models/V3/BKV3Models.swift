@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents `BKV3_AnalysisProfile` in the BacktestingKit public API.
-public struct BKV3_AnalysisProfile: Codable, Equatable {
+public struct BKV3_AnalysisProfile: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Starting capital associated with this value.
@@ -98,7 +98,7 @@ public struct BKV3_AnalysisProfile: Codable, Equatable {
 }
 
 /// Represents `BKV3_Config` in the BacktestingKit public API.
-public struct BKV3_Config: Codable, Equatable {
+public struct BKV3_Config: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Active associated with this value.
@@ -147,7 +147,7 @@ public struct BKV3_Config: Codable, Equatable {
 }
 
 /// Represents `BKV3_InstrumentInfo` in the BacktestingKit public API.
-public struct BKV3_InstrumentInfo: Codable, Equatable {
+public struct BKV3_InstrumentInfo: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Name associated with this value.
@@ -316,7 +316,7 @@ public struct BKV3_OptimizeRule: Codable, Equatable {
 }
 
 /// Represents `BKV3_RiskProfile` in the BacktestingKit public API.
-public struct BKV3_RiskProfile: Codable, Equatable {
+public struct BKV3_RiskProfile: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Series type associated with this value.
@@ -350,7 +350,7 @@ public struct BKV3_RiskProfile: Codable, Equatable {
 }
 
 /// Represents `BKV3_SimulationRule` in the BacktestingKit public API.
-public struct BKV3_SimulationRule: Codable, Equatable {
+public struct BKV3_SimulationRule: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Indicator one name associated with this value.
@@ -408,13 +408,13 @@ public struct BKV3_SimulationRule: Codable, Equatable {
 }
 
 /// Represents `RuleType` in the BacktestingKit public API.
-public enum RuleType: String, CaseIterable, Codable {
+public enum RuleType: String, CaseIterable, Codable, Sendable {
     case entry
     case exit
 }
 
 /// Represents `BKV3_TradeEntry` in the BacktestingKit public API.
-public struct BKV3_TradeEntry: Codable, Equatable {
+public struct BKV3_TradeEntry: Codable, Equatable, Sendable {
     /// Stable identifier for this value.
     public var id: String
     /// Direction associated with this value.

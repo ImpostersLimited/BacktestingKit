@@ -1,7 +1,7 @@
 import Foundation
 
 /// Defines the `BKBarParsing` contract used by BacktestingKit.
-public protocol BKBarParsing {
+public protocol BKBarParsing: Sendable {
     func parse(
         csv: String,
         dateFormat: String,

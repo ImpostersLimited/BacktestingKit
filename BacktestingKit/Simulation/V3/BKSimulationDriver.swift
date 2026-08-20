@@ -4,7 +4,7 @@ import Darwin
 #endif
 
 /// Represents `BKSimulationDriverError` in the BacktestingKit public API.
-public enum BKSimulationDriverError: LocalizedError, Equatable {
+public enum BKSimulationDriverError: LocalizedError, Equatable, Sendable {
     case emptyInstrumentID
     case emptyBars(String)
     case invalidConcurrency(Int)
@@ -23,7 +23,7 @@ public enum BKSimulationDriverError: LocalizedError, Equatable {
 }
 
 /// Represents `BKEngineErrorCode` in the BacktestingKit public API.
-public enum BKEngineErrorCode: String, Codable, Equatable {
+public enum BKEngineErrorCode: String, Codable, Equatable, Sendable {
     case invalidInput
     case network
     case dataParsing
@@ -33,7 +33,7 @@ public enum BKEngineErrorCode: String, Codable, Equatable {
 }
 
 /// Represents `BKSimulationRunFailure` in the BacktestingKit public API.
-public struct BKSimulationRunFailure: Error, Equatable {
+public struct BKSimulationRunFailure: Error, Equatable, Sendable {
     /// Identifier associated with this value.
     public var instrumentID: String
     /// Human-readable message associated with this value.
@@ -47,7 +47,7 @@ public struct BKSimulationRunFailure: Error, Equatable {
 }
 
 /// Represents `BKEngineFailure` in the BacktestingKit public API.
-public struct BKEngineFailure: Error, Equatable, Codable {
+public struct BKEngineFailure: Error, Equatable, Codable, Sendable {
     /// Identifier associated with this value.
     public var instrumentID: String
     /// Machine-readable code associated with this value.
@@ -88,7 +88,7 @@ public struct BKEngineFailure: Error, Equatable, Codable {
 }
 
 /// Represents `BKSimulationBatchOptions` in the BacktestingKit public API.
-public struct BKSimulationBatchOptions: Equatable, Codable {
+public struct BKSimulationBatchOptions: Equatable, Codable, Sendable {
     /// Maximum concurrency associated with this value.
     public var maxConcurrency: Int
     /// Continue on failure associated with this value.
@@ -117,7 +117,7 @@ public struct BKSimulationBatchOptions: Equatable, Codable {
 }
 
 /// Represents `BKSimulationBatchReport` in the BacktestingKit public API.
-public struct BKSimulationBatchReport: Equatable, Codable {
+public struct BKSimulationBatchReport: Equatable, Codable, Sendable {
     /// Total instruments represented by this value.
     public var totalInstruments: Int
     /// Succeeded associated with this value.
@@ -150,14 +150,14 @@ public struct BKSimulationBatchReport: Equatable, Codable {
 }
 
 /// Represents `BKCSVParserMode` in the BacktestingKit public API.
-public enum BKCSVParserMode: String, Codable, Equatable {
+public enum BKCSVParserMode: String, Codable, Equatable, Sendable {
     case legacy
     case streamingLenient
     case streamingStrict
 }
 
 /// Represents `BKSimulationExecutionOptions` in the BacktestingKit public API.
-public struct BKSimulationExecutionOptions: Equatable, Codable {
+public struct BKSimulationExecutionOptions: Equatable, Codable, Sendable {
     /// Parser mode associated with this value.
     public var parserMode: BKCSVParserMode
     /// Maximum bars per instrument associated with this value.
@@ -178,7 +178,7 @@ public struct BKSimulationExecutionOptions: Equatable, Codable {
 }
 
 /// Represents `BKSimulationInstrumentReport` in the BacktestingKit public API.
-public struct BKSimulationInstrumentReport: Equatable, Codable {
+public struct BKSimulationInstrumentReport: Equatable, Codable, Sendable {
     /// Identifier associated with this value.
     public var instrumentID: String
     /// Elapsed ms associated with this value.
@@ -207,7 +207,7 @@ public struct BKSimulationInstrumentReport: Equatable, Codable {
 }
 
 /// Represents `BKSimulationProgress` in the BacktestingKit public API.
-public struct BKSimulationProgress: Equatable, Codable {
+public struct BKSimulationProgress: Equatable, Codable, Sendable {
     /// Completed associated with this value.
     public var completed: Int
     /// Total associated with this value.
@@ -236,7 +236,7 @@ public struct BKSimulationProgress: Equatable, Codable {
 }
 
 /// Represents `BKSimulationBatchDetailedReport` in the BacktestingKit public API.
-public struct BKSimulationBatchDetailedReport: Equatable, Codable {
+public struct BKSimulationBatchDetailedReport: Equatable, Codable, Sendable {
     /// High-level summary associated with this value.
     public var summary: BKSimulationBatchReport
     /// Instrument reports associated with this value.
@@ -250,7 +250,7 @@ public struct BKSimulationBatchDetailedReport: Equatable, Codable {
 }
 
 /// Represents `BKSimulationBatchRunHandle` in the BacktestingKit public API.
-public struct BKSimulationBatchRunHandle {
+public struct BKSimulationBatchRunHandle: Sendable {
     /// Progress updates emitted while the batch run is active.
     public var progressStream: AsyncStream<BKSimulationProgress>
     /// Task that resolves to the final batch report.
@@ -560,7 +560,8 @@ public final class BKSimulationDriver: BKV3SimulationDriving {
         batchOptions: BKSimulationBatchOptions = BKSimulationBatchOptions(),
         executionOptions: BKSimulationExecutionOptions = BKSimulationExecutionOptions()
     ) -> BKSimulationBatchRunHandle {
-        final class ProgressHolder {
+        // Mutable continuation access is serialized by lock.
+        final class ProgressHolder: @unchecked Sendable {
             private let lock = NSLock()
             private var continuation: AsyncStream<BKSimulationProgress>.Continuation?
 

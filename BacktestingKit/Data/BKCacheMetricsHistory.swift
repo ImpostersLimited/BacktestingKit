@@ -1,14 +1,15 @@
 import Foundation
 
 /// Defines the `BKCacheMetricsSnapshotStoring` contract used by BacktestingKit.
-public protocol BKCacheMetricsSnapshotStoring {
+public protocol BKCacheMetricsSnapshotStoring: Sendable {
     func allSnapshots() -> [BKCacheMetricsSnapshot]
     func persist(to url: URL) -> Result<Void, Error>
     func appendSnapshot(_ snapshot: BKCacheMetricsSnapshot)
 }
 
 /// Ring-buffer store for retaining and exporting recent cache metrics snapshots.
-public final class BKCacheMetricsHistory: BKCacheMetricsSnapshotStoring {
+// Mutable ring-buffer state is serialized by lock.
+public final class BKCacheMetricsHistory: BKCacheMetricsSnapshotStoring, @unchecked Sendable {
     private let capacity: Int
     private var snapshots: [BKCacheMetricsSnapshot]
     private var headIndex: Int

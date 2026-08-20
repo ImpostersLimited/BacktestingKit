@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents `BKCacheMetricsSnapshot` in the BacktestingKit public API.
-public struct BKCacheMetricsSnapshot: Equatable, Codable {
+public struct BKCacheMetricsSnapshot: Equatable, Codable, Sendable {
     /// Stats associated with this value.
     public let stats: BKCsvCacheStats
     /// Timestamp associated with this value.
@@ -21,7 +21,8 @@ public protocol BKCacheMetricsReporting {
 }
 
 /// Observes a cached CSV provider and exposes point-in-time or streaming cache metrics.
-public final class BKCacheMetricsReporter: BKCacheMetricsReporting {
+// Mutable stream state is serialized by lock.
+public final class BKCacheMetricsReporter: BKCacheMetricsReporting, @unchecked Sendable {
     private let provider: BKCachedCsvProvider
     private let lock = NSLock()
     private var lastSnapshot: BKCacheMetricsSnapshot

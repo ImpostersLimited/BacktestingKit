@@ -7,7 +7,7 @@ public enum TradeDirection: String, Codable {
 }
 
 /// Represents `PositionStatus` in the BacktestingKit public API.
-public enum PositionStatus: String, Codable {
+public enum PositionStatus: String, Codable, Sendable {
     case enter = "Enter"
     case none = "None"
     case position = "Position"

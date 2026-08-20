@@ -45,7 +45,7 @@ public actor BKRequestRateLimiter {
 }
 
 /// Defines the `BKV3DataStore` contract used by BacktestingKit.
-public protocol BKV3DataStore {
+public protocol BKV3DataStore: Sendable {
     func getConfigs(instrumentID: String) async -> Result<[BKV3_Config], Error>
     func getSimulationRules(configID: String, ruleType: String) async -> Result<[BKV3_SimulationRule], Error>
     func saveConfig(_ config: BKV3_Config) async -> Result<Void, Error>
@@ -56,7 +56,7 @@ public protocol BKV3DataStore {
 }
 
 /// Defines the `BKRawCsvProvider` contract used by BacktestingKit.
-public protocol BKRawCsvProvider {
+public protocol BKRawCsvProvider: Sendable {
     func getRawCsv(ticker: String, p1: Double, p2: Double) async -> Result<String, Error>
 }
 

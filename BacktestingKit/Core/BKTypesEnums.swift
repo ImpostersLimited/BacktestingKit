@@ -28,7 +28,7 @@ public enum CompareOption: String, Codable {
 }
 
 /// Represents `SimulationPolicy` in the BacktestingKit public API.
-public enum SimulationPolicy: String, Codable {
+public enum SimulationPolicy: String, Codable, Sendable {
     case sma
     case ema
     case macd

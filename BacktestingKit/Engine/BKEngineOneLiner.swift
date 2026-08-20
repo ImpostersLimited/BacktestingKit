@@ -1,18 +1,42 @@
 import Foundation
 
+private final class BKEngineOneLinerStorage: @unchecked Sendable {
+    private let lock = NSLock()
+    var components = BKEngineComponentGraph()
+    var makeV3Driver: @Sendable (_ dataStore: BKV3DataStore, _ csvProvider: BKRawCsvProvider) -> any BKV3SimulationDriving = { dataStore, csvProvider in
+        BKEngineOneLiner.components.simulationFactory.makeV3Driver(dataStore: dataStore, csvProvider: csvProvider)
+    }
+    var makeV2Driver: @Sendable (_ csvProvider: BKRawCsvProvider) -> any BKV2SimulationDriving = { csvProvider in
+        BKEngineOneLiner.components.simulationFactory.makeV2Driver(csvProvider: csvProvider)
+    }
+
+    func withLock<T>(_ operation: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return operation()
+    }
+}
+
 /// Represents `BKEngineOneLiner` in the BacktestingKit public API.
 public enum BKEngineOneLiner {
+    private static let storage = BKEngineOneLinerStorage()
+
     /// Shared component graph used by the one-liner engine entrypoints.
-    public static var components = BKEngineComponentGraph()
+    public static var components: BKEngineComponentGraph {
+        get { storage.withLock { storage.components } }
+        set { storage.withLock { storage.components = newValue } }
+    }
 
     /// Factory closure used to build v3 drivers for one-liner execution.
-    public static var makeV3Driver: @Sendable (_ dataStore: BKV3DataStore, _ csvProvider: BKRawCsvProvider) -> any BKV3SimulationDriving = { dataStore, csvProvider in
-        components.simulationFactory.makeV3Driver(dataStore: dataStore, csvProvider: csvProvider)
+    public static var makeV3Driver: @Sendable (_ dataStore: BKV3DataStore, _ csvProvider: BKRawCsvProvider) -> any BKV3SimulationDriving {
+        get { storage.withLock { storage.makeV3Driver } }
+        set { storage.withLock { storage.makeV3Driver = newValue } }
     }
 
     /// Factory closure used to build v2 drivers for one-liner execution.
-    public static var makeV2Driver: @Sendable (_ csvProvider: BKRawCsvProvider) -> any BKV2SimulationDriving = { csvProvider in
-        components.simulationFactory.makeV2Driver(csvProvider: csvProvider)
+    public static var makeV2Driver: @Sendable (_ csvProvider: BKRawCsvProvider) -> any BKV2SimulationDriving {
+        get { storage.withLock { storage.makeV2Driver } }
+        set { storage.withLock { storage.makeV2Driver = newValue } }
     }
 
     /// Represents `BKV3Request` in the BacktestingKit public API.

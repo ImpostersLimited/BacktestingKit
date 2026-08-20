@@ -1,7 +1,7 @@
 import Foundation
 
 /// Configuration controlling the size and retention policy of the in-memory CSV cache.
-public struct BKCsvCacheConfiguration: Equatable, Codable {
+public struct BKCsvCacheConfiguration: Equatable, Codable, Sendable {
     /// Maximum entries associated with this value.
     public var maxEntries: Int
     /// Time to live seconds associated with this value.
@@ -15,7 +15,7 @@ public struct BKCsvCacheConfiguration: Equatable, Codable {
 }
 
 /// Represents `BKCsvCacheStats` in the BacktestingKit public API.
-public struct BKCsvCacheStats: Equatable, Codable {
+public struct BKCsvCacheStats: Equatable, Codable, Sendable {
     /// Number of cache hits recorded.
     public var hits: Int
     /// Number of cache misses recorded.
@@ -56,7 +56,7 @@ actor BKInMemoryCsvCache {
     private var hits = 0
     private var misses = 0
 
-    var observers: [UUID: (BKCsvCacheStats) -> Void] = [:]
+    var observers: [UUID: @Sendable (BKCsvCacheStats) -> Void] = [:]
 
     init(configuration: BKCsvCacheConfiguration) {
         self.configuration = configuration
@@ -95,7 +95,7 @@ actor BKInMemoryCsvCache {
         BKCsvCacheStats(hits: hits, misses: misses, entries: storage.count)
     }
 
-    func addObserver(_ callback: @escaping (BKCsvCacheStats) -> Void) -> UUID {
+    func addObserver(_ callback: @escaping @Sendable (BKCsvCacheStats) -> Void) -> UUID {
         let id = UUID()
         observers[id] = callback
         callback(stats())
@@ -124,7 +124,8 @@ actor BKInMemoryCsvCache {
 }
 
 /// `BKRawCsvProvider` decorator that caches fetched CSV payloads in memory.
-public final class BKCachedCsvProvider: BKRawCsvProvider {
+// Mutable metrics state is serialized by metricsLock.
+public final class BKCachedCsvProvider: BKRawCsvProvider, @unchecked Sendable {
     private let wrapped: BKRawCsvProvider
     let cache: BKInMemoryCsvCache
 

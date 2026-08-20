@@ -1,5 +1,18 @@
 # Active Todo
 
+## 2026-08-20 Swift 6.3 Compatibility Audit
+
+- [completed] Inspect stable Swift 6.3.3 and Swift 6.4 beta diagnostics across package and Xcode builds.
+- [completed] Implement only confirmed API, compiler error, and warning fixes.
+- [completed] Re-run the full Swift test suite and relevant Xcode build validation.
+- [completed] Record final evidence and close GitHub issue #5.
+
+### Review
+
+- No renamed or deprecated API migration was required. Strict Swift 6 mode exposed concurrency-safety diagnostics, resolved with checked `Sendable` conformances and lock-backed synchronization for the existing mutable hooks.
+- Swift 6.3.3 configured and strict-mode tests passed all 127 tests. Swift 6.4 beta strict-mode tests also passed all 127 tests.
+- The Xcode 27 beta Swift 6 build passed for an iPhone 16 Pro Max simulator destination. Xcode still emits its App Intents metadata-extraction warning despite no App Intents dependency and despite the documented disable build setting.
+
 ## 2026-05-02 Final Checkup
 
 - [in-progress] Check current git/worktree state, branch context, and local task/release notes.
