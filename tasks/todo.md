@@ -1,5 +1,18 @@
 # Active Todo
 
+## 2026-08-21 Pending Exit Execution
+
+- [completed] Reproduce the final-bar pending-exit trade inconsistency.
+- [completed] Keep a final-bar exit pending without forming a completed trade.
+- [completed] Verify the same exit completes at the next bar's market open.
+- [completed] Run targeted and full Swift tests, then close GitHub issue #6.
+
+### Review
+
+- The regression test failed before the fix because a final-bar exit produced a synthetic completed trade.
+- End-of-series mark-to-market finalization now applies only to `.position`; `.exit` remains pending until another bar executes it at that bar's open.
+- The focused test and all 128 Swift package tests pass with stable Xcode.
+
 ## 2026-08-20 Swift 6.3 Compatibility Audit
 
 - [completed] Inspect stable Swift 6.3.3 and Swift 6.4 beta diagnostics across package and Xcode builds.

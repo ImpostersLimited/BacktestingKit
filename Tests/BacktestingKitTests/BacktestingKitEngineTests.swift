@@ -583,6 +583,41 @@ final class BacktestingKitDemoTests: XCTestCase {
     // TODO: Add per-dataset snapshot validation when demo dataset baselines are finalized.
 }
 
+final class BacktestingKitBacktestCoreTests: XCTestCase {
+    func testFinalBarExitRemainsPendingUntilNextMarketOpen() {
+        let start = Date(timeIntervalSince1970: 1_704_067_200)
+        let bars = (0..<4).map { index in
+            BKBar(
+                time: start.addingTimeInterval(Double(index) * 86_400),
+                open: 100 + Double(index),
+                high: 101 + Double(index),
+                low: 99 + Double(index),
+                close: 100.5 + Double(index),
+                volume: 1_000
+            )
+        }
+        let strategy = BKStrategy(
+            entryRule: { enter, args in
+                if args.bar.time == bars[0].time { enter(nil) }
+            },
+            exitRule: { exit, args in
+                if args.bar.time == bars[2].time { exit() }
+            }
+        )
+
+        let pending = backtest(strategy: strategy, inputSeries: Array(bars.prefix(3)))
+        XCTAssertEqual(pending.lastStatus, .exit)
+        XCTAssertTrue(pending.trades.isEmpty)
+
+        let completed = backtest(strategy: strategy, inputSeries: bars)
+        XCTAssertEqual(completed.lastStatus, .none)
+        XCTAssertEqual(completed.trades.count, 1)
+        XCTAssertEqual(completed.trades[0].exitTime, bars[3].time)
+        XCTAssertEqual(completed.trades[0].exitPrice, bars[3].open)
+        XCTAssertEqual(completed.trades[0].exitReason, "exit-rule")
+    }
+}
+
 final class BacktestingKitMetricsTests: XCTestCase {
     func testBacktestComputesExtendedStrategyMetrics() {
         let dateFormatter = ISO8601DateFormatter()

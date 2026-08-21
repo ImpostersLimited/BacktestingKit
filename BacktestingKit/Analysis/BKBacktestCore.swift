@@ -327,7 +327,7 @@ public func backtest(
         }
     }
 
-    if let open = openPosition, let lastBar = indicatorsSeries.last {
+    if positionStatus == .position, let open = openPosition, let lastBar = indicatorsSeries.last {
         let lastTrade = finalizePosition(open, exitTime: lastBar.time, exitPrice: lastBar.close, exitReason: "finalize")
         completedTrades.append(lastTrade)
     }
