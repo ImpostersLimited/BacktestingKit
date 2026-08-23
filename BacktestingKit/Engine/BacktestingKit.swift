@@ -16,7 +16,7 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     /// Calculates the Simple Moving Average (SMA) for the given candles and period.
     /// The 'name' parameter is required to uniquely key the SMA values in technicalIndicators.
     public func simpleMovingAverage(_ candles: [Candlestick], period: Int, name: String) -> [Candlestick] {
-        guard candles.count >= period else { return candles }
+        guard period > 0, candles.count >= period else { return candles }
         var result: [Candlestick] = candles
         var sum = 0.0
         for i in 0..<candles.count {
@@ -48,7 +48,7 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     /// The 'uuid' parameter is required to uniquely key the EMA values in technicalIndicators.
     /// Stores EMA values in technicalIndicators under key "ema_{period}_{uuid}".
     public func exponentialMovingAverage(_ candles: [Candlestick], period: Int, uuid: String) -> [Candlestick] {
-        guard candles.count >= period else { return candles }
+        guard period > 0, candles.count >= period else { return candles }
         var result: [Candlestick] = candles
         let key = "ema_\(period)_\(uuid)"
         let k = 2.0 / Double(period + 1)
@@ -74,7 +74,7 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     /// The 'uuid' parameter is required to uniquely key the RSI values in technicalIndicators.
     /// RSI values range from 0 to 100 and are stored under key "rsi_{period}_{uuid}".
     public func relativeStrengthIndex(_ candles: [Candlestick], period: Int, uuid: String) -> [Candlestick] {
-        guard candles.count >= period + 1 else { return candles }
+        guard period > 0, candles.count >= period + 1 else { return candles }
         var result: [Candlestick] = candles
         let key = "rsi_\(period)_\(uuid)"
 
@@ -115,7 +115,7 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     /// The 'uuid' parameter is required to uniquely key the MACD values in technicalIndicators.
     /// Stores MACD line under "macd_{fast}_{slow}_{uuid}", Signal line under "macdSignal_{signal}_{uuid}", and Histogram under "macdHist_{fast}_{slow}_{signal}_{uuid}".
     public func macd(_ candles: [Candlestick], fast: Int, slow: Int, signal: Int, uuid: String) -> [Candlestick] {
-        guard candles.count >= slow + signal else { return candles }
+        guard fast > 0, slow > 0, signal > 0, fast < slow, candles.count >= slow + signal else { return candles }
         var result: [Candlestick] = candles
 
         let fastEMA = exponentialMovingAverage(candles, period: fast, uuid: uuid)
@@ -192,7 +192,7 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     /// The 'uuid' parameter is required to uniquely key the Bollinger Bands values in technicalIndicators.
     /// Stores bands under keys "bbUpper_{period}_{numStdDev}_{uuid}", "bbMiddle_{period}_{uuid}", and "bbLower_{period}_{numStdDev}_{uuid}".
     public func bollingerBands(_ candles: [Candlestick], period: Int, numStdDev: Double, uuid: String) -> [Candlestick] {
-        guard candles.count >= period else { return candles }
+        guard period > 0, numStdDev >= 0, candles.count >= period else { return candles }
         var result: [Candlestick] = candles
 
         let middleKey = "bbMiddle_\(period)_\(uuid)"
@@ -244,51 +244,39 @@ public final class BacktestingKitManager: BKBacktestingEngine {
     // Now uses updated simpleMovingAverage returning [Candlestick] with embedded SMA values
     /// Executes `backtestSMACrossover`.
     public func backtestSMACrossover(candles: [Candlestick], fast: Int, slow: Int) -> BacktestResult {
-        guard fast < slow, candles.count >= slow else {
+        guard fast > 0, slow > 0, fast < slow, candles.count >= slow else {
             return backtestMetricsCalculator.emptyResult()
         }
 
         let uuid = "backtestSMA"
         let fastKey = "sma_\(fast)_\(uuid)"
         let slowKey = "sma_\(slow)_\(uuid)"
-        let fastResult = simpleMovingAverage(candles, period: fast, name: fastKey)
-        let slowResult = simpleMovingAverage(candles, period: slow, name: slowKey)
-        let fastSMA = fastResult.map { $0.technicalIndicators[fastKey] }
-        let slowSMA = slowResult.map { $0.technicalIndicators[slowKey] }
+        let withFast = simpleMovingAverage(candles, period: fast, name: fastKey)
+        let enriched = simpleMovingAverage(withFast, period: slow, name: slowKey)
 
-        var trades: [Trade] = []
-        var inPosition = false
-        var entryPrice: Double = 0
-        var entryDate: Date = candles[0].date
-
-        for i in 1..<candles.count {
-            guard let fPrev = fastSMA[i-1], let sPrev = slowSMA[i-1],
-                  let fCurr = fastSMA[i], let sCurr = slowSMA[i] else { continue }
-            // Golden cross (buy signal)
-            if !inPosition && fPrev < sPrev && fCurr >= sCurr {
-                inPosition = true
-                entryPrice = candles[i].close
-                entryDate = candles[i].date
-                trades.append(Trade(type: .buy, entryDate: entryDate, entryPrice: entryPrice))
+        return backtest(
+            candles: enriched,
+            uuid: uuid,
+            indicators: [],
+            entrySignal: { prev, curr in
+                guard
+                    let fastPrev = prev.candles[prev.index].technicalIndicators[fastKey],
+                    let slowPrev = prev.candles[prev.index].technicalIndicators[slowKey],
+                    let fastCurr = curr.candles[curr.index].technicalIndicators[fastKey],
+                    let slowCurr = curr.candles[curr.index].technicalIndicators[slowKey]
+                else { return false }
+                return fastPrev < slowPrev && fastCurr >= slowCurr
+            },
+            exitSignal: { prev, curr, _ in
+                guard
+                    let fastPrev = prev.candles[prev.index].technicalIndicators[fastKey],
+                    let slowPrev = prev.candles[prev.index].technicalIndicators[slowKey],
+                    let fastCurr = curr.candles[curr.index].technicalIndicators[fastKey],
+                    let slowCurr = curr.candles[curr.index].technicalIndicators[slowKey]
+                else { return false }
+                return fastPrev > slowPrev && fastCurr <= slowCurr
             }
-            // Death cross (sell signal)
-            if inPosition && fPrev > sPrev && fCurr <= sCurr {
-                inPosition = false
-                let exitPrice = candles[i].close
-                let exitDate = candles[i].date
-                if let idx = trades.lastIndex(where: { $0.exitDate == nil }) {
-                    let openTrade = trades[idx]
-                    trades[idx] = Trade(type: openTrade.type, entryDate: openTrade.entryDate, entryPrice: openTrade.entryPrice, exitDate: exitDate, exitPrice: exitPrice)
-                }
-            }
-        }
-        // Close last open trade at end
-        if inPosition, let last = candles.last {
-            if let idx = trades.lastIndex(where: { $0.exitDate == nil }) {
-                trades[idx] = Trade(type: trades[idx].type, entryDate: trades[idx].entryDate, entryPrice: trades[idx].entryPrice, exitDate: last.date, exitPrice: last.close)
-            }
-        }
-        return backtestMetricsCalculator.makeResult(trades: trades, candles: candles)
+        )
     }
 
     /**
@@ -320,40 +308,25 @@ public final class BacktestingKitManager: BKBacktestingEngine {
                 enriched = simpleMovingAverage(enriched, period: period, name: key)
             }
         }
-        var trades: [Trade] = []
-        var inPosition = false
-        var entryPrice: Double = 0
-        var entryDate: Date = candles[0].date
+        var tradeLifecycle = BKTradeLifecycle()
         var entryIdx = 0
         for i in 1..<enriched.count {
+            if let action = tradeLifecycle.executePending(at: enriched[i]) {
+                if action == .entry { entryIdx = i }
+                continue
+            }
             let prevProvider = TechnicalIndicatorValueProvider(index: i-1, candles: enriched, indicatorNameMap: [:])
             let currProvider = TechnicalIndicatorValueProvider(index: i, candles: enriched, indicatorNameMap: [:])
-            if !inPosition && entrySignal(prevProvider, currProvider) {
-                inPosition = true
-                entryPrice = enriched[i].close
-                entryDate = enriched[i].date
-                entryIdx = i
-                trades.append(Trade(type: .buy, entryDate: entryDate, entryPrice: entryPrice))
-            } else if inPosition {
+            if !tradeLifecycle.isInPosition && entrySignal(prevProvider, currProvider) {
+                tradeLifecycle.requestEntry()
+            } else if tradeLifecycle.isInPosition {
                 let entryProvider = TechnicalIndicatorValueProvider(index: entryIdx, candles: enriched, indicatorNameMap: [:])
                 if exitSignal(prevProvider, currProvider, entryProvider) {
-                    inPosition = false
-                    let exitPrice = enriched[i].close
-                    let exitDate = enriched[i].date
-                    if let idx = trades.lastIndex(where: { $0.exitDate == nil }) {
-                        let openTrade = trades[idx]
-                        trades[idx] = Trade(type: openTrade.type, entryDate: openTrade.entryDate, entryPrice: openTrade.entryPrice, exitDate: exitDate, exitPrice: exitPrice)
-                    }
+                    tradeLifecycle.requestExit()
                 }
             }
         }
-        // Close last open trade at end
-        if inPosition, let last = enriched.last {
-            if let idx = trades.lastIndex(where: { $0.exitDate == nil }) {
-                trades[idx] = Trade(type: trades[idx].type, entryDate: trades[idx].entryDate, entryPrice: trades[idx].entryPrice, exitDate: last.date, exitPrice: last.close)
-            }
-        }
-        return backtestMetricsCalculator.makeResult(trades: trades, candles: candles)
+        return backtestMetricsCalculator.makeResult(trades: tradeLifecycle.trades, candles: candles)
     }
 
     /**

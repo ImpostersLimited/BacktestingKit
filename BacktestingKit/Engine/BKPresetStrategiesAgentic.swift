@@ -1,5 +1,14 @@
 import Foundation
 
+func bkIsEchoChannelPivotReclaim(previousClose: Double, close: Double, signal: Double, channelLow: Double) -> Bool {
+    let reclaimLevel = channelLow * 1.01
+    return previousClose <= reclaimLevel && close > reclaimLevel && close > signal
+}
+
+func bkIsLadderCompressionRelease(previousATR: Double, previousBaseline: Double, atr: Double, baseline: Double) -> Bool {
+    baseline > 0 && previousATR < previousBaseline && atr > baseline * 1.25
+}
+
 public extension BacktestingKitManager {
     func backtestPulseDipRebound(
         candles: [Candlestick],
@@ -9,7 +18,8 @@ public extension BacktestingKitManager {
         rsiEntry: Double = 35,
         rsiExit: Double = 58
     ) -> BacktestResult {
-        guard candles.count > max(pulsePeriod, trendPeriod, rsiPeriod + 1) else { return bkEmptyBacktestResult() }
+        guard pulsePeriod > 0, trendPeriod > 0, rsiPeriod > 0,
+              candles.count > max(pulsePeriod, trendPeriod, rsiPeriod + 1) else { return bkEmptyBacktestResult() }
         let uuid = "pulse_dip_rebound"
         let pulseKey = "ema_\(pulsePeriod)_\(uuid)"
         let trendKey = "sma_\(trendPeriod)_\(uuid)"
@@ -47,7 +57,8 @@ public extension BacktestingKitManager {
         slowPeriod: Int = 34,
         atrPeriod: Int = 10
     ) -> BacktestResult {
-        guard candles.count > max(fastPeriod, slowPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
+        guard fastPeriod > 0, slowPeriod > 0, atrPeriod > 0,
+              candles.count > max(fastPeriod, slowPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "drift_breather"
         let fastKey = "ema_\(fastPeriod)_\(uuid)"
         let slowKey = "ema_\(slowPeriod)_\(uuid)"
@@ -89,7 +100,8 @@ public extension BacktestingKitManager {
         atrBaselinePeriod: Int = 40,
         expansionMultiple: Double = 1.4
     ) -> BacktestResult {
-        guard candles.count > max(atrPeriod, atrBaselinePeriod) else { return bkEmptyBacktestResult() }
+        guard atrPeriod > 0, atrBaselinePeriod > 0,
+              candles.count >= max(55, max(atrPeriod, atrBaselinePeriod)) else { return bkEmptyBacktestResult() }
         let uuid = "volatility_snap"
         let atrKey = "atr_\(atrPeriod)_\(uuid)"
         let atrBaselineKey = "atr_baseline_\(atrBaselinePeriod)_\(uuid)"
@@ -139,7 +151,7 @@ public extension BacktestingKitManager {
         period: Int = 20,
         numStdDev: Double = 1.8
     ) -> BacktestResult {
-        guard candles.count >= period else { return bkEmptyBacktestResult() }
+        guard period > 0, candles.count >= period else { return bkEmptyBacktestResult() }
         let uuid = "band_vwap_bridge"
         let lowerKey = "bbLower_\(period)_\(numStdDev)_\(uuid)"
         let middleKey = "bbMiddle_\(period)_\(uuid)"
@@ -173,7 +185,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: enter on channel reclaim after controlled pullback.
     func backtestEchoChannelPivot(candles: [Candlestick], channelPeriod: Int = 30, signalPeriod: Int = 9) -> BacktestResult {
-        guard candles.count > max(channelPeriod, signalPeriod) else { return bkEmptyBacktestResult() }
+        guard channelPeriod > 0, signalPeriod > 0,
+              candles.count > max(channelPeriod, signalPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "echo_channel_pivot"
         let signalKey = "ema_\(signalPeriod)_\(uuid)"
         let withSignal = exponentialMovingAverage(candles, period: signalPeriod, uuid: uuid)
@@ -181,13 +194,18 @@ public extension BacktestingKitManager {
             candles: withSignal,
             uuid: uuid,
             indicators: [],
-            entrySignal: { _, curr in
+            entrySignal: { prev, curr in
                 let i = curr.index
                 guard i >= channelPeriod else { return false }
                 let bar = curr.candles[i]
                 let channelLow = curr.candles[(i - channelPeriod)..<i].map(\.low).min() ?? bar.low
                 guard let signal = bar.technicalIndicators[signalKey] else { return false }
-                return bar.close > signal && bar.close > channelLow * 1.01
+                return bkIsEchoChannelPivotReclaim(
+                    previousClose: prev.candles[prev.index].close,
+                    close: bar.close,
+                    signal: signal,
+                    channelLow: channelLow
+                )
             },
             exitSignal: { _, curr, _ in
                 let bar = curr.candles[curr.index]
@@ -199,7 +217,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: trade release from compression ladder.
     func backtestLadderCompressionRelease(candles: [Candlestick], atrPeriod: Int = 12, baselinePeriod: Int = 25) -> BacktestResult {
-        guard candles.count > max(atrPeriod, baselinePeriod) else { return bkEmptyBacktestResult() }
+        guard atrPeriod > 0, baselinePeriod > 0,
+              candles.count > max(atrPeriod, baselinePeriod) else { return bkEmptyBacktestResult() }
         let uuid = "ladder_compression_release"
         let atrKey = "atr_\(atrPeriod)_\(uuid)"
         let baseKey = "atr_base_\(baselinePeriod)_\(uuid)"
@@ -216,10 +235,22 @@ public extension BacktestingKitManager {
             candles: enriched,
             uuid: uuid,
             indicators: [],
-            entrySignal: { _, curr in
+            entrySignal: { prev, curr in
                 let bar = curr.candles[curr.index]
-                guard let atr = bar.technicalIndicators[atrKey], let base = bar.technicalIndicators[baseKey], base > 0 else { return false }
-                return atr > base * 1.25
+                let previousBar = prev.candles[prev.index]
+                guard
+                    let atr = bar.technicalIndicators[atrKey],
+                    let base = bar.technicalIndicators[baseKey],
+                    let previousAtr = previousBar.technicalIndicators[atrKey],
+                    let previousBase = previousBar.technicalIndicators[baseKey],
+                    base > 0
+                else { return false }
+                return bkIsLadderCompressionRelease(
+                    previousATR: previousAtr,
+                    previousBaseline: previousBase,
+                    atr: atr,
+                    baseline: base
+                )
             },
             exitSignal: { _, curr, _ in
                 let bar = curr.candles[curr.index]
@@ -231,7 +262,7 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: latch short impulse weakness then unload on normalized momentum.
     func backtestRSIImpulseLatch(candles: [Candlestick], rsiPeriod: Int = 5, entry: Double = 28, exit: Double = 55) -> BacktestResult {
-        guard candles.count > rsiPeriod + 1 else { return bkEmptyBacktestResult() }
+        guard rsiPeriod > 0, candles.count > rsiPeriod + 1 else { return bkEmptyBacktestResult() }
         let uuid = "rsi_impulse_latch"
         let rsiKey = "rsi_\(rsiPeriod)_\(uuid)"
         let enriched = relativeStrengthIndex(candles, period: rsiPeriod, uuid: uuid)
@@ -252,7 +283,7 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: dual-anchor (VWAP + trend) slipstream continuation.
     func backtestDualAnchorSlipstream(candles: [Candlestick], trendPeriod: Int = 50) -> BacktestResult {
-        guard candles.count > trendPeriod else { return bkEmptyBacktestResult() }
+        guard trendPeriod > 0, candles.count > trendPeriod else { return bkEmptyBacktestResult() }
         let uuid = "dual_anchor_slipstream"
         let trendKey = "sma_\(trendPeriod)_\(uuid)"
         let vwapKey = "vwap_\(uuid)"
@@ -277,7 +308,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: trail directional pulses with ATR-gated exits.
     func backtestAtrPulseTrail(candles: [Candlestick], emaPeriod: Int = 21, atrPeriod: Int = 14) -> BacktestResult {
-        guard candles.count > max(emaPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
+        guard emaPeriod > 0, atrPeriod > 0,
+              candles.count > max(emaPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "atr_pulse_trail"
         let emaKey = "ema_\(emaPeriod)_\(uuid)"
         let atrKey = "atr_\(atrPeriod)_\(uuid)"
@@ -302,7 +334,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: switch long-on slopes when fast and slow trend vectors align.
     func backtestSlopeSwitch(candles: [Candlestick], fastPeriod: Int = 10, slowPeriod: Int = 40) -> BacktestResult {
-        guard candles.count > slowPeriod + 1 else { return bkEmptyBacktestResult() }
+        guard fastPeriod > 0, slowPeriod > 0,
+              candles.count > slowPeriod + 1 else { return bkEmptyBacktestResult() }
         let uuid = "slope_switch"
         let fastKey = "ema_\(fastPeriod)_\(uuid)"
         let slowKey = "sma_\(slowPeriod)_\(uuid)"
@@ -337,7 +370,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: rebound into trend only when money-flow skew confirms.
     func backtestVolSkewRebound(candles: [Candlestick], mfiPeriod: Int = 10, trendPeriod: Int = 100) -> BacktestResult {
-        guard candles.count > max(mfiPeriod, trendPeriod) else { return bkEmptyBacktestResult() }
+        guard mfiPeriod > 0, trendPeriod > 0,
+              candles.count > max(mfiPeriod, trendPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "vol_skew_rebound"
         let mfiKey = "mfi_\(mfiPeriod)_\(uuid)"
         let trendKey = "sma_\(trendPeriod)_\(uuid)"
@@ -361,7 +395,7 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: climb median band and exit on centerline failure.
     func backtestMedianBandClimb(candles: [Candlestick], period: Int = 30, std: Double = 1.5) -> BacktestResult {
-        guard candles.count >= period else { return bkEmptyBacktestResult() }
+        guard period > 0, candles.count >= period else { return bkEmptyBacktestResult() }
         let uuid = "median_band_climb"
         let middleKey = "bbMiddle_\(period)_\(uuid)"
         let upperKey = "bbUpper_\(period)_\(std)_\(uuid)"
@@ -385,7 +419,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: snap back from stretched downside into short trend anchor.
     func backtestRangeSnapback(candles: [Candlestick], rangePeriod: Int = 15, emaPeriod: Int = 12) -> BacktestResult {
-        guard candles.count > max(rangePeriod, emaPeriod) else { return bkEmptyBacktestResult() }
+        guard rangePeriod > 0, emaPeriod > 0,
+              candles.count > max(rangePeriod, emaPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "range_snapback"
         let emaKey = "ema_\(emaPeriod)_\(uuid)"
         let enriched = exponentialMovingAverage(candles, period: emaPeriod, uuid: uuid)
@@ -411,7 +446,8 @@ public extension BacktestingKitManager {
 
     /// Agentic preset: momentum valve opens on MACD positivity and closes on momentum decay.
     func backtestMomentumValve(candles: [Candlestick], fast: Int = 8, slow: Int = 21, signal: Int = 5) -> BacktestResult {
-        guard candles.count > slow + signal else { return bkEmptyBacktestResult() }
+        guard fast > 0, slow > 0, signal > 0,
+              candles.count > slow + signal else { return bkEmptyBacktestResult() }
         let uuid = "momentum_valve"
         let macdKey = "macd_\(fast)_\(slow)_\(uuid)"
         let signalKey = "macdSignal_\(signal)_\(uuid)"

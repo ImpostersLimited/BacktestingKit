@@ -6,7 +6,7 @@ public func bollingerPreset(trailing: Bool = true, stopLoss: Double = 15) -> Sim
         indicatorOneName: "ruleOneEntry",
         indicatorOneType: .bollingerLower,
         indicatorOneFigure: [20, 2, 2],
-        compare: .smallThan,
+        compare: .largerOrEqualTo,
         indicatorTwoName: "ruleOneExit",
         indicatorTwoType: .close,
         indicatorTwoFigure: [0, 0, 0]
@@ -53,7 +53,7 @@ public func customPreset(trailing: Bool = true, stopLoss: Double = 15) -> Simula
         indicatorTwoFigure: [0, 0, 0]
     )
     return SimulationPolicyConfig(
-        policy: .sma,
+        policy: .customStrategy,
         trailingStopLoss: trailing,
         stopLossFigure: stopLoss,
         profitFactor: pow(2.0, 32.0),
@@ -266,19 +266,19 @@ public func smaCrossoverPreset(trailing: Bool = true, stopLoss: Double = 15) -> 
         indicatorOneName: "ruleOneEntry",
         indicatorOneType: .sma,
         indicatorOneFigure: [50, 0, 0],
-        compare: .smallThan,
+        compare: .largerOrEqualTo,
         indicatorTwoName: "ruleOneExit",
         indicatorTwoType: .sma,
-        indicatorTwoFigure: [200, 0, 0]
+        indicatorTwoFigure: [150, 0, 0]
     )
     let ruleTwo = SimulationRule(
         indicatorOneName: "ruleTwoEntry",
         indicatorOneType: .sma,
         indicatorOneFigure: [50, 0, 0],
-        compare: .largerOrEqualTo,
+        compare: .smallerOrEqualTo,
         indicatorTwoName: "ruleTwoExit",
         indicatorTwoType: .sma,
-        indicatorTwoFigure: [200, 0, 0]
+        indicatorTwoFigure: [150, 0, 0]
     )
     return SimulationPolicyConfig(
         policy: .smaCrossover,
@@ -298,19 +298,19 @@ public func emaCrossoverPreset(trailing: Bool = true, stopLoss: Double = 15) -> 
         indicatorOneName: "ruleOneEntry",
         indicatorOneType: .ema,
         indicatorOneFigure: [50, 0, 0],
-        compare: .smallThan,
+        compare: .largerOrEqualTo,
         indicatorTwoName: "ruleOneExit",
         indicatorTwoType: .ema,
-        indicatorTwoFigure: [200, 0, 0]
+        indicatorTwoFigure: [150, 0, 0]
     )
     let ruleTwo = SimulationRule(
         indicatorOneName: "ruleTwoEntry",
         indicatorOneType: .ema,
         indicatorOneFigure: [50, 0, 0],
-        compare: .largerOrEqualTo,
+        compare: .smallerOrEqualTo,
         indicatorTwoName: "ruleTwoExit",
         indicatorTwoType: .ema,
-        indicatorTwoFigure: [200, 0, 0]
+        indicatorTwoFigure: [150, 0, 0]
     )
     return SimulationPolicyConfig(
         policy: .emaCrossover,
@@ -396,7 +396,7 @@ public func stochasticFastPreset(trailing: Bool = true, stopLoss: Double = 15) -
         indicatorOneFigure: [14, 3, 0],
         compare: .largerOrEqualTo,
         indicatorTwoName: "ruleOneExit",
-        indicatorTwoType: .stochasticFastPercentK,
+        indicatorTwoType: .stochasticFastPercentD,
         indicatorTwoFigure: [14, 3, 0]
     )
     let ruleTwo = SimulationRule(
@@ -405,7 +405,7 @@ public func stochasticFastPreset(trailing: Bool = true, stopLoss: Double = 15) -
         indicatorOneFigure: [14, 3, 0],
         compare: .smallThan,
         indicatorTwoName: "ruleTwoExit",
-        indicatorTwoType: .stochasticFastPercentK,
+        indicatorTwoType: .stochasticFastPercentD,
         indicatorTwoFigure: [14, 3, 0]
     )
     return SimulationPolicyConfig(

@@ -15,7 +15,7 @@ public extension BacktestingKitManager {
         atrPeriod: Int = 14,
         atrStopMultiplier: Double = 2.0
     ) -> BacktestResult {
-        guard candles.count > max(breakoutPeriod, atrPeriod) else {
+        guard breakoutPeriod > 0, atrPeriod > 0, candles.count > max(breakoutPeriod, atrPeriod) else {
             return bkEmptyBacktestResult()
         }
 
@@ -24,34 +24,28 @@ public extension BacktestingKitManager {
         let enriched = averageTrueRange(candles, period: atrPeriod, uuid: uuid)
 
         var tradeLifecycle = BKTradeLifecycle()
-        var inPosition = false
         var trailingStop = 0.0
 
         for i in breakoutPeriod..<enriched.count {
             let bar = enriched[i]
             let breakoutHigh = enriched[(i - breakoutPeriod)..<i].map(\.high).max() ?? bar.high
 
-            if !inPosition {
-                if bar.close > breakoutHigh, let atr = bar.technicalIndicators[atrKey] {
-                    inPosition = true
-                    let entryPrice = bar.close
-                    let entryDate = bar.date
-                    trailingStop = bar.close - (atr * atrStopMultiplier)
-                    tradeLifecycle.openLong(entryDate: entryDate, entryPrice: entryPrice)
+            if let action = tradeLifecycle.executePending(at: bar) {
+                if action == .entry, let atr = bar.technicalIndicators[atrKey] {
+                    trailingStop = bar.open - (atr * atrStopMultiplier)
                 }
                 continue
             }
 
-            if bar.close <= trailingStop {
-                inPosition = false
-                tradeLifecycle.closeLatestOpen(exitDate: bar.date, exitPrice: bar.close)
+            if !tradeLifecycle.isInPosition {
+                if bar.close > breakoutHigh, bar.technicalIndicators[atrKey] != nil {
+                    tradeLifecycle.requestEntry()
+                }
+            } else if bar.close <= trailingStop {
+                tradeLifecycle.requestExit()
             } else if let atr = bar.technicalIndicators[atrKey] {
                 trailingStop = max(trailingStop, bar.close - (atr * atrStopMultiplier))
             }
-        }
-
-        if inPosition, let last = enriched.last {
-            tradeLifecycle.closeLatestOpen(exitDate: last.date, exitPrice: last.close)
         }
 
         return buildMetricsReport(trades: tradeLifecycle.trades, candles: candles).result
@@ -69,50 +63,18 @@ public extension BacktestingKitManager {
         atrPeriod: Int = 10,
         multiplier: Double = 3.0
     ) -> BacktestResult {
-        guard candles.count > atrPeriod else {
+        guard atrPeriod > 0, candles.count > atrPeriod else {
             return bkEmptyBacktestResult()
         }
 
         let uuid = "supertrend"
-        let atrKey = "atr_\(atrPeriod)_\(uuid)"
-        let withAtr = averageTrueRange(candles, period: atrPeriod, uuid: uuid)
         let trendKey = "supertrend_\(atrPeriod)_\(uuid)"
-
-        var result = withAtr
-        var finalUpper: Double = 0
-        var finalLower: Double = 0
-        var supertrend: Double = 0
-        var bullish = true
-
-        for i in 0..<result.count {
-            let bar = result[i]
-            guard let atr = bar.technicalIndicators[atrKey] else { continue }
-            let hl2 = (bar.high + bar.low) / 2
-            let basicUpper = hl2 + (multiplier * atr)
-            let basicLower = hl2 - (multiplier * atr)
-
-            if i == 0 {
-                finalUpper = basicUpper
-                finalLower = basicLower
-                supertrend = basicLower
-                bullish = true
-            } else {
-                let prevClose = result[i - 1].close
-                finalUpper = (basicUpper < finalUpper || prevClose > finalUpper) ? basicUpper : finalUpper
-                finalLower = (basicLower > finalLower || prevClose < finalLower) ? basicLower : finalLower
-
-                if supertrend == finalUpper {
-                    bullish = bar.close > finalUpper
-                } else {
-                    bullish = bar.close >= finalLower
-                }
-                supertrend = bullish ? finalLower : finalUpper
-            }
-
-            var ti = result[i].technicalIndicators
-            ti[trendKey] = supertrend
-            result[i] = result[i].replacingTechnicalIndicators(ti)
-        }
+        let result = bkSupertrendCandles(
+            candles,
+            atrPeriod: atrPeriod,
+            multiplier: multiplier,
+            uuid: uuid
+        )
 
         return backtest(
             candles: result,
@@ -147,7 +109,8 @@ public extension BacktestingKitManager {
         adxPeriod: Int = 14,
         adxThreshold: Double = 20
     ) -> BacktestResult {
-        guard candles.count > max(slowPeriod, adxPeriod + 1) else {
+        guard fastPeriod > 0, slowPeriod > 0, adxPeriod > 0,
+              candles.count > max(slowPeriod, adxPeriod + 1) else {
             return bkEmptyBacktestResult()
         }
 
@@ -200,7 +163,7 @@ public extension BacktestingKitManager {
         entryZ: Double = -1.0,
         exitZ: Double = 0.0
     ) -> BacktestResult {
-        guard candles.count >= period else {
+        guard period > 0, candles.count >= period else {
             return bkEmptyBacktestResult()
         }
 
@@ -253,7 +216,8 @@ public extension BacktestingKitManager {
         entryThreshold: Double = 10,
         exitThreshold: Double = 60
     ) -> BacktestResult {
-        backtestRSIMeanReversionWithTrendFilter(
+        guard trendPeriod > 0 else { return bkEmptyBacktestResult() }
+        return backtestRSIMeanReversionWithTrendFilter(
             candles: candles,
             rsiPeriod: 2,
             oversold: entryThreshold,
@@ -278,7 +242,8 @@ public extension BacktestingKitManager {
         atrPeriod: Int = 14,
         atrStopMultiplier: Double = 2.0
     ) -> BacktestResult {
-        guard candles.count > max(slowPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
+        guard fastPeriod > 0, slowPeriod > 0, atrPeriod > 0,
+              candles.count > max(slowPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "ema_fast_slow_atr"
         let fastKey = "ema_\(fastPeriod)_\(uuid)"
         let slowKey = "ema_\(slowPeriod)_\(uuid)"
@@ -288,11 +253,16 @@ public extension BacktestingKitManager {
         let enriched = exponentialMovingAverage(withFast, period: slowPeriod, uuid: uuid)
 
         var tradeLifecycle = BKTradeLifecycle()
-        var inPosition = false
         var trailingStop = 0.0
 
         for i in 1..<enriched.count {
             let bar = enriched[i]
+            if let action = tradeLifecycle.executePending(at: bar) {
+                if action == .entry, let atr = bar.technicalIndicators[atrKey] {
+                    trailingStop = bar.open - (atr * atrStopMultiplier)
+                }
+                continue
+            }
             guard
                 let fast = bar.technicalIndicators[fastKey],
                 let slow = bar.technicalIndicators[slowKey]
@@ -301,26 +271,20 @@ public extension BacktestingKitManager {
             let prevFast = prev.technicalIndicators[fastKey]
             let prevSlow = prev.technicalIndicators[slowKey]
 
-            if !inPosition {
-                if let pf = prevFast, let ps = prevSlow, pf <= ps, fast > slow, let atr = bar.technicalIndicators[atrKey] {
-                    inPosition = true
-                    trailingStop = bar.close - (atr * atrStopMultiplier)
-                    tradeLifecycle.openLong(entryDate: bar.date, entryPrice: bar.close)
+            if !tradeLifecycle.isInPosition {
+                if let pf = prevFast, let ps = prevSlow, pf <= ps, fast > slow, bar.technicalIndicators[atrKey] != nil {
+                    tradeLifecycle.requestEntry()
                 }
                 continue
             }
 
             if bar.close <= trailingStop || fast < slow {
-                inPosition = false
-                tradeLifecycle.closeLatestOpen(exitDate: bar.date, exitPrice: bar.close)
+                tradeLifecycle.requestExit()
             } else if let atr = bar.technicalIndicators[atrKey] {
                 trailingStop = max(trailingStop, bar.close - (atr * atrStopMultiplier))
             }
         }
 
-        if inPosition, let last = enriched.last {
-            tradeLifecycle.closeLatestOpen(exitDate: last.date, exitPrice: last.close)
-        }
         return buildMetricsReport(trades: tradeLifecycle.trades, candles: candles).result
     }
 
@@ -347,13 +311,13 @@ public extension BacktestingKitManager {
         atrPeriod: Int = 14,
         atrStopMultiplier: Double = 2.0
     ) -> BacktestResult {
-        guard candles.count > max(entryPeriod, exitPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
+        guard entryPeriod > 0, exitPeriod > 0, atrPeriod > 0,
+              candles.count > max(entryPeriod, exitPeriod, atrPeriod) else { return bkEmptyBacktestResult() }
         let uuid = "donchian2055_atr"
         let atrKey = "atr_\(atrPeriod)_\(uuid)"
         let enriched = averageTrueRange(candles, period: atrPeriod, uuid: uuid)
 
         var tradeLifecycle = BKTradeLifecycle()
-        var inPosition = false
         var trailingStop = 0.0
 
         for i in entryPeriod..<enriched.count {
@@ -361,26 +325,24 @@ public extension BacktestingKitManager {
             let entryHigh = enriched[(i - entryPeriod)..<i].map(\.high).max() ?? bar.high
             let exitLow = i >= exitPeriod ? (enriched[(i - exitPeriod)..<i].map(\.low).min() ?? bar.low) : bar.low
 
-            if !inPosition {
-                if bar.close > entryHigh, let atr = bar.technicalIndicators[atrKey] {
-                    inPosition = true
-                    trailingStop = bar.close - (atr * atrStopMultiplier)
-                    tradeLifecycle.openLong(entryDate: bar.date, entryPrice: bar.close)
+            if let action = tradeLifecycle.executePending(at: bar) {
+                if action == .entry, let atr = bar.technicalIndicators[atrKey] {
+                    trailingStop = bar.open - (atr * atrStopMultiplier)
                 }
                 continue
             }
 
-            if bar.close < exitLow || bar.close <= trailingStop {
-                inPosition = false
-                tradeLifecycle.closeLatestOpen(exitDate: bar.date, exitPrice: bar.close)
+            if !tradeLifecycle.isInPosition {
+                if bar.close > entryHigh, bar.technicalIndicators[atrKey] != nil {
+                    tradeLifecycle.requestEntry()
+                }
+            } else if bar.close < exitLow || bar.close <= trailingStop {
+                tradeLifecycle.requestExit()
             } else if let atr = bar.technicalIndicators[atrKey] {
                 trailingStop = max(trailingStop, bar.close - (atr * atrStopMultiplier))
             }
         }
 
-        if inPosition, let last = enriched.last {
-            tradeLifecycle.closeLatestOpen(exitDate: last.date, exitPrice: last.close)
-        }
         return buildMetricsReport(trades: tradeLifecycle.trades, candles: candles).result
     }
 
@@ -409,7 +371,8 @@ public extension BacktestingKitManager {
         adxPeriod: Int = 14,
         adxThreshold: Double = 20
     ) -> BacktestResult {
-        guard candles.count > max(slowPeriod, adxPeriod + 1) else { return bkEmptyBacktestResult() }
+        guard fastPeriod > 0, slowPeriod > 0, adxPeriod > 0,
+              candles.count > max(slowPeriod, adxPeriod + 1) else { return bkEmptyBacktestResult() }
         let uuid = "sma_regime_adx"
         let fastKey = "sma_\(fastPeriod)_\(uuid)"
         let slowKey = "sma_\(slowPeriod)_\(uuid)"
@@ -445,7 +408,7 @@ public extension BacktestingKitManager {
         period: Int = 20,
         numStdDev: Double = 2.0
     ) -> BacktestResult {
-        guard candles.count >= period else { return bkEmptyBacktestResult() }
+        guard period > 0, candles.count >= period else { return bkEmptyBacktestResult() }
         let uuid = "bb_reversion"
         let lowerKey = "bbLower_\(period)_\(numStdDev)_\(uuid)"
         let middleKey = "bbMiddle_\(period)_\(uuid)"
@@ -474,7 +437,7 @@ public extension BacktestingKitManager {
         entryZ: Double = -2.0,
         exitZ: Double = 0.0
     ) -> BacktestResult {
-        guard candles.count > lookback else { return bkEmptyBacktestResult() }
+        guard lookback > 0, candles.count > lookback else { return bkEmptyBacktestResult() }
         let uuid = "zscore_reversion_\(lookback)"
         let zKey = "zscore_\(lookback)_\(uuid)"
         var enriched = candles
@@ -524,20 +487,19 @@ public extension BacktestingKitManager {
         entryZ: Double = -1.5,
         exitZ: Double = 0.0
     ) -> BacktestResult {
-        guard candles.count > rollingStdPeriod else {
+        guard rollingStdPeriod > 0, candles.count > rollingStdPeriod else {
             return bkEmptyBacktestResult()
         }
 
         let uuid = "vwap_reversion"
         let vwapKey = "vwap_\(uuid)"
         let zKey = "vwap_z_\(uuid)"
-        let withVWAP = vwap(candles, uuid: uuid)
-        var enriched = withVWAP
-        var spreads: [Double] = Array(repeating: 0, count: withVWAP.count)
+        var enriched = bkSessionAnchoredVWAP(candles, uuid: uuid)
+        var spreads: [Double] = Array(repeating: 0, count: candles.count)
 
-        for i in 0..<withVWAP.count {
-            let v = withVWAP[i].technicalIndicators[vwapKey] ?? withVWAP[i].close
-            spreads[i] = withVWAP[i].close - v
+        for i in 0..<candles.count {
+            let currentVWAP = enriched[i].technicalIndicators[vwapKey] ?? candles[i].close
+            spreads[i] = candles[i].close - currentVWAP
             if i + 1 < rollingStdPeriod {
                 continue
             }
@@ -548,9 +510,9 @@ public extension BacktestingKitManager {
             } / Double(rollingStdPeriod)
             let std = max(sqrt(variance), 0.000001)
             let z = (spreads[i] - mean) / std
-            var ti = enriched[i].technicalIndicators
-            ti[zKey] = z
-            enriched[i] = enriched[i].replacingTechnicalIndicators(ti)
+            var zIndicators = enriched[i].technicalIndicators
+            zIndicators[zKey] = z
+            enriched[i] = enriched[i].replacingTechnicalIndicators(zIndicators)
         }
 
         return backtest(
@@ -580,7 +542,8 @@ public extension BacktestingKitManager {
         breakoutPeriod: Int = 20,
         obvSmaPeriod: Int = 20
     ) -> BacktestResult {
-        guard candles.count > max(breakoutPeriod, obvSmaPeriod) else {
+        guard breakoutPeriod > 0, obvSmaPeriod > 0,
+              candles.count > max(breakoutPeriod, obvSmaPeriod) else {
             return bkEmptyBacktestResult()
         }
 
@@ -640,7 +603,8 @@ public extension BacktestingKitManager {
         oversold: Double = 20,
         exitThreshold: Double = 60
     ) -> BacktestResult {
-        guard candles.count > max(mfiPeriod, trendPeriod) else {
+        guard mfiPeriod > 0, trendPeriod > 0,
+              candles.count > max(mfiPeriod, trendPeriod) else {
             return bkEmptyBacktestResult()
         }
 
@@ -688,7 +652,8 @@ public extension BacktestingKitManager {
         breakoutPeriod: Int = 20,
         exitSmaPeriod: Int = 20
     ) -> BacktestResult {
-        guard candles.count > max(atrSmaPeriod, breakoutPeriod, exitSmaPeriod, atrPeriod) else {
+        guard atrPeriod > 0, atrSmaPeriod > 0, breakoutPeriod > 0, exitSmaPeriod > 0,
+              candles.count > max(atrSmaPeriod, breakoutPeriod, exitSmaPeriod, atrPeriod) else {
             return bkEmptyBacktestResult()
         }
 
@@ -736,4 +701,80 @@ public extension BacktestingKitManager {
         )
     }
 
+}
+
+extension BacktestingKitManager {
+    func bkSupertrendCandles(
+        _ candles: [Candlestick],
+        atrPeriod: Int,
+        multiplier: Double,
+        uuid: String
+    ) -> [Candlestick] {
+        let atrKey = "atr_\(atrPeriod)_\(uuid)"
+        let trendKey = "supertrend_\(atrPeriod)_\(uuid)"
+        var result = averageTrueRange(candles, period: atrPeriod, uuid: uuid)
+        var finalUpper = 0.0
+        var finalLower = 0.0
+        var supertrend = 0.0
+        var isInitialized = false
+
+        for i in result.indices {
+            let bar = result[i]
+            guard let atr = bar.technicalIndicators[atrKey] else { continue }
+            let hl2 = (bar.high + bar.low) / 2
+            let basicUpper = hl2 + (multiplier * atr)
+            let basicLower = hl2 - (multiplier * atr)
+
+            if !isInitialized {
+                finalUpper = basicUpper
+                finalLower = basicLower
+                supertrend = basicLower
+                isInitialized = true
+            } else {
+                let prevClose = result[i - 1].close
+                let previousFinalUpper = finalUpper
+                let previousSupertrend = supertrend
+                finalUpper = (basicUpper < finalUpper || prevClose > finalUpper) ? basicUpper : finalUpper
+                finalLower = (basicLower > finalLower || prevClose < finalLower) ? basicLower : finalLower
+                let bullish = previousSupertrend == previousFinalUpper
+                    ? bar.close > finalUpper
+                    : bar.close >= finalLower
+                supertrend = bullish ? finalLower : finalUpper
+            }
+
+            var indicators = result[i].technicalIndicators
+            indicators[trendKey] = supertrend
+            result[i] = result[i].replacingTechnicalIndicators(indicators)
+        }
+
+        return result
+    }
+
+    func bkSessionAnchoredVWAP(_ candles: [Candlestick], uuid: String) -> [Candlestick] {
+        var result = candles
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
+        var session: Date?
+        var cumulativePV = 0.0
+        var cumulativeVolume = 0.0
+        let key = "vwap_\(uuid)"
+
+        for i in candles.indices {
+            let currentSession = calendar.startOfDay(for: candles[i].date)
+            if currentSession != session {
+                session = currentSession
+                cumulativePV = 0
+                cumulativeVolume = 0
+            }
+            let typical = (candles[i].high + candles[i].low + candles[i].close) / 3
+            cumulativePV += typical * candles[i].volume
+            cumulativeVolume += candles[i].volume
+            let currentVWAP = cumulativeVolume > 0 ? cumulativePV / cumulativeVolume : candles[i].close
+            var indicators = result[i].technicalIndicators
+            indicators[key] = currentVWAP
+            result[i] = result[i].replacingTechnicalIndicators(indicators)
+        }
+
+        return result
+    }
 }

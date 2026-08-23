@@ -2,7 +2,7 @@ import Foundation
 
 public extension BacktestingKitManager {
     func backtestEMACrossover(candles: [Candlestick], fast: Int, slow: Int) -> BacktestResult {
-        guard fast < slow, candles.count >= slow else {
+        guard fast > 0, slow > 0, fast < slow, candles.count >= slow else {
             return bkEmptyBacktestResult()
         }
 
@@ -44,7 +44,7 @@ public extension BacktestingKitManager {
         overbought: Double = 70,
         trendPeriod: Int = 200
     ) -> BacktestResult {
-        guard candles.count > max(rsiPeriod + 2, trendPeriod) else {
+        guard rsiPeriod > 0, trendPeriod > 0, candles.count > max(rsiPeriod + 2, trendPeriod) else {
             return bkEmptyBacktestResult()
         }
         let uuid = "rsi_mr_trend"
@@ -78,7 +78,7 @@ public extension BacktestingKitManager {
         atrPeriod: Int = 14,
         atrStopMultiplier: Double = 2.0
     ) -> BacktestResult {
-        guard candles.count > max(breakoutPeriod, atrPeriod) else {
+        guard breakoutPeriod > 0, atrPeriod > 0, candles.count > max(breakoutPeriod, atrPeriod) else {
             return bkEmptyBacktestResult()
         }
         let uuid = "breakout_atr"
@@ -86,34 +86,32 @@ public extension BacktestingKitManager {
         let enriched = averageTrueRange(candles, period: atrPeriod, uuid: uuid)
 
         var tradeLifecycle = BKTradeLifecycle()
-        var inPosition = false
         var stopPrice = 0.0
 
         for i in breakoutPeriod..<enriched.count {
             let recentHigh = enriched[(i - breakoutPeriod)..<i].map(\.high).max() ?? enriched[i].high
             let bar = enriched[i]
 
-            if !inPosition {
-                if bar.close > recentHigh, let atr = bar.technicalIndicators[atrKey] {
-                    inPosition = true
-                    let entryPrice = bar.close
-                    let entryDate = bar.date
-                    stopPrice = bar.close - (atr * atrStopMultiplier)
-                    tradeLifecycle.openLong(entryDate: entryDate, entryPrice: entryPrice)
+            if let action = tradeLifecycle.executePending(at: bar) {
+                if action == .entry, let atr = bar.technicalIndicators[atrKey] {
+                    stopPrice = bar.open - (atr * atrStopMultiplier)
+                }
+                continue
+            }
+
+            if !tradeLifecycle.isInPosition {
+                if bar.close > recentHigh, bar.technicalIndicators[atrKey] != nil {
+                    tradeLifecycle.requestEntry()
                 }
             } else {
                 if bar.close <= stopPrice {
-                    inPosition = false
-                    tradeLifecycle.closeLatestOpen(exitDate: bar.date, exitPrice: bar.close)
+                    tradeLifecycle.requestExit()
                 } else if let atr = bar.technicalIndicators[atrKey] {
                     stopPrice = max(stopPrice, bar.close - (atr * atrStopMultiplier))
                 }
             }
         }
 
-        if inPosition, let last = enriched.last {
-            tradeLifecycle.closeLatestOpen(exitDate: last.date, exitPrice: last.close)
-        }
         return buildMetricsReport(trades: tradeLifecycle.trades, candles: candles).result
     }
 
@@ -127,7 +125,8 @@ public extension BacktestingKitManager {
         rsiLow: Double = 30,
         rsiHigh: Double = 70
     ) -> BacktestResult {
-        guard candles.count > max(trendSlow, adxPeriod + 1) else {
+        guard adxPeriod > 0, trendFast > 0, trendSlow > 0, trendFast < trendSlow, rsiPeriod > 0,
+              candles.count > max(trendSlow, adxPeriod + 1) else {
             return bkEmptyBacktestResult()
         }
 

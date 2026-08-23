@@ -713,28 +713,27 @@ public final class BKSimulationDriver: BKV3SimulationDriving {
                 )
             }
             guard let policy = config.policy else { continue }
-            var entryRules: [BKV3_SimulationRule] = []
-            var exitRules: [BKV3_SimulationRule] = []
+            var entryRules: [BKV3_SimulationRule]
+            switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "entry"), instrumentID: ticker) {
+            case .success(let rules):
+                entryRules = rules
+            case .failure(let error):
+                return .failure(error)
+            }
+            var exitRules: [BKV3_SimulationRule]
+            switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "exit"), instrumentID: ticker) {
+            case .success(let rules):
+                exitRules = rules
+            case .failure(let error):
+                return .failure(error)
+            }
 
-            if policy == .customStrategy {
-                switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "entry"), instrumentID: ticker) {
-                case .success(let rules):
-                    entryRules = rules
-                case .failure(let error):
-                    return .failure(error)
-                }
-                if entryRules.isEmpty { continue }
-                switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "exit"), instrumentID: ticker) {
-                case .success(let rules):
-                    exitRules = rules
-                case .failure(let error):
-                    return .failure(error)
-                }
-                if exitRules.isEmpty { continue }
-            } else {
+            if entryRules.isEmpty, exitRules.isEmpty, policy != .customStrategy {
                 let presetRules = v3GetPresetRules(preset: policy)
                 entryRules = presetRules.0.map { convertSimulationRule($0, type: "entry", configID: config.id, tickerID: ticker) }
                 exitRules = presetRules.1.map { convertSimulationRule($0, type: "exit", configID: config.id, tickerID: ticker) }
+            } else if entryRules.isEmpty || exitRules.isEmpty {
+                continue
             }
 
             let (output, status) = v3simulateConfig(

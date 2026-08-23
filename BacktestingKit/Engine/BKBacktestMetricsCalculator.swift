@@ -43,8 +43,12 @@ struct BKComputedBacktestMetrics {
 
 final class BKBacktestMetricsCalculator: BKBacktestMetricsCalculating {
     func emptyResult() -> BacktestResult {
+        emptyResult(preserving: [])
+    }
+
+    private func emptyResult(preserving trades: [Trade]) -> BacktestResult {
         BacktestResult(
-            trades: [],
+            trades: trades,
             totalReturn: 0,
             annualizedReturn: 0,
             winRate: 0,
@@ -72,7 +76,7 @@ final class BKBacktestMetricsCalculator: BKBacktestMetricsCalculating {
 
     func makeResult(trades: [Trade], candles: [Candlestick]) -> BacktestResult {
         guard let metrics = compute(trades: trades, candles: candles) else {
-            return emptyResult()
+            return emptyResult(preserving: trades)
         }
 
         return BacktestResult(
@@ -104,7 +108,7 @@ final class BKBacktestMetricsCalculator: BKBacktestMetricsCalculating {
 
     func makeReport(trades: [Trade], candles: [Candlestick]) -> BacktestMetricsReport {
         guard let metrics = compute(trades: trades, candles: candles) else {
-            let empty = emptyResult()
+            let empty = emptyResult(preserving: trades)
             return BacktestMetricsReport(
                 result: empty,
                 totalCompoundedReturn: 0,

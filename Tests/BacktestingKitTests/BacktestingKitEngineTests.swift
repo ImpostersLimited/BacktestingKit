@@ -621,7 +621,7 @@ final class BacktestingKitBacktestCoreTests: XCTestCase {
 final class BacktestingKitMetricsTests: XCTestCase {
     func testBacktestComputesExtendedStrategyMetrics() {
         let dateFormatter = ISO8601DateFormatter()
-        let closes: [Double] = [100, 110, 99, 120, 132]
+        let closes: [Double] = [100, 101, 100, 101, 110, 111, 100, 101, 90]
         let candles: [Candlestick] = closes.enumerated().compactMap { index, close in
             guard let date = dateFormatter.date(from: "2024-01-0\(index + 1)T00:00:00Z") else {
                 return nil
@@ -644,14 +644,14 @@ final class BacktestingKitMetricsTests: XCTestCase {
             candles: candles,
             uuid: "metrics-test",
             indicators: [],
-            entrySignal: { _, curr in curr.index == 1 || curr.index == 3 },
-            exitSignal: { _, curr, _ in curr.index == 2 || curr.index == 4 }
+            entrySignal: { _, curr in curr.index == 1 || curr.index == 5 },
+            exitSignal: { _, curr, _ in curr.index == 3 || curr.index == 7 }
         )
 
         XCTAssertEqual(result.numTrades, 2)
         XCTAssertEqual(result.numWins, 1)
         XCTAssertEqual(result.numLosses, 1)
-        XCTAssertEqual(result.avgHoldingPeriod, 1, accuracy: 0.000_001)
+        XCTAssertEqual(result.avgHoldingPeriod, 2, accuracy: 0.000_001)
         XCTAssertEqual(result.maxConsecutiveWins, 1)
         XCTAssertEqual(result.maxConsecutiveLosses, 1)
         XCTAssertEqual(result.volatility, 0.141_421_356, accuracy: 0.000_001)
@@ -663,7 +663,7 @@ final class BacktestingKitMetricsTests: XCTestCase {
 
     func testBuildMetricsReportProvidesDetailedBreakdown() {
         let dateFormatter = ISO8601DateFormatter()
-        let closes: [Double] = [100, 110, 99, 120, 132]
+        let closes: [Double] = [100, 101, 100, 101, 110, 111, 100, 101, 90]
         let candles: [Candlestick] = closes.enumerated().compactMap { index, close in
             guard let date = dateFormatter.date(from: "2024-01-0\(index + 1)T00:00:00Z") else {
                 return nil
@@ -684,8 +684,8 @@ final class BacktestingKitMetricsTests: XCTestCase {
             candles: candles,
             uuid: "metrics-report-test",
             indicators: [],
-            entrySignal: { _, curr in curr.index == 1 || curr.index == 3 },
-            exitSignal: { _, curr, _ in curr.index == 2 || curr.index == 4 }
+            entrySignal: { _, curr in curr.index == 1 || curr.index == 5 },
+            exitSignal: { _, curr, _ in curr.index == 3 || curr.index == 7 }
         )
         let report = manager.buildMetricsReport(from: result, candles: candles)
 
@@ -759,7 +759,7 @@ final class BacktestingKitMetricsTests: XCTestCase {
         XCTAssertLessThan(adjusted[0].netPnl, adjusted[0].grossPnl)
     }
 
-    func testPresetStrategyExpansionsSmoke() {
+    func testPresetStrategyExpansionsProduceValidTradeLifecyclesAndMetrics() {
         let baseDate = Date(timeIntervalSince1970: 1_704_067_200)
         let candles: [Candlestick] = (0..<320).map { idx in
             let wave = sin(Double(idx) / 8.0) * 2.0
@@ -776,16 +776,19 @@ final class BacktestingKitMetricsTests: XCTestCase {
         }
 
         let manager = BacktestingKitManager()
-
-        XCTAssertGreaterThanOrEqual(manager.backtestDonchianBreakoutWithATRStop(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestSupertrend(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestDualEMAWithADXFilter(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestBollingerZScoreMeanReversion(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestRSI2MeanReversion(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestVWAPReversion(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestOBVTrendConfirmationBreakout(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestMFITrendFilterReversion(candles: candles).numTrades, 0)
-        XCTAssertGreaterThanOrEqual(manager.backtestVolatilityContractionBreakout(candles: candles).numTrades, 0)
+        let results = [
+            manager.backtestDonchianBreakoutWithATRStop(candles: candles),
+            manager.backtestSupertrend(candles: candles),
+            manager.backtestDualEMAWithADXFilter(candles: candles),
+            manager.backtestBollingerZScoreMeanReversion(candles: candles),
+            manager.backtestRSI2MeanReversion(candles: candles),
+            manager.backtestVWAPReversion(candles: candles),
+            manager.backtestOBVTrendConfirmationBreakout(candles: candles),
+            manager.backtestMFITrendFilterReversion(candles: candles),
+            manager.backtestVolatilityContractionBreakout(candles: candles)
+        ]
+        results.forEach(assertValidPresetResult)
+        XCTAssertTrue(results.contains { $0.numTrades > 0 })
 
         let riskParity = BKPortfolioPresets.riskParityWeights(annualizedVolatilities: [0.1, 0.2, 0.3])
         XCTAssertEqual(riskParity.count, 3)
@@ -822,9 +825,11 @@ final class BacktestingKitMetricsTests: XCTestCase {
         let candleCatalogItems = BKPresetCatalog.allCases.filter { $0.family == "candle" }
         XCTAssertEqual(candleCatalogItems.count, 29)
         for item in candleCatalogItems {
-            let result = item.runCandlePreset(with: manager, candles: candles)
-            XCTAssertNotNil(result)
-            XCTAssertGreaterThanOrEqual(result?.numTrades ?? -1, 0)
+            guard let result = item.runCandlePreset(with: manager, candles: candles) else {
+                XCTFail("Missing candle preset result for \(item.rawValue)")
+                continue
+            }
+            assertValidPresetResult(result)
         }
 
         let fixedFractionalQty = BKPositionSizingPresetProfile.fixedFractional1Pct.sizingModel.quantity(
@@ -843,5 +848,42 @@ final class BacktestingKitMetricsTests: XCTestCase {
         let rotation = BKPortfolioPresets.riskOnRiskOffWeights(riskOnMomentum: 0.12, riskOffMomentum: 0.03)
         XCTAssertEqual(rotation.count, 2)
         XCTAssertEqual(rotation.reduce(0, +), 1.0, accuracy: 0.000_001)
+    }
+
+    private func assertValidPresetResult(_ result: BacktestResult) {
+        let completedTrades = result.trades.filter { $0.exitDate != nil && $0.exitPrice != nil }
+        XCTAssertEqual(result.numTrades, completedTrades.count)
+        XCTAssertLessThanOrEqual(result.numWins + result.numLosses, result.numTrades)
+        for trade in result.trades {
+            XCTAssertTrue(trade.entryPrice.isFinite)
+            XCTAssertGreaterThan(trade.entryPrice, 0)
+            if let exitDate = trade.exitDate, let exitPrice = trade.exitPrice {
+                XCTAssertGreaterThanOrEqual(exitDate, trade.entryDate)
+                XCTAssertTrue(exitPrice.isFinite)
+                XCTAssertGreaterThan(exitPrice, 0)
+            } else {
+                XCTAssertNil(trade.exitDate)
+                XCTAssertNil(trade.exitPrice)
+            }
+        }
+        [
+            result.totalReturn,
+            result.annualizedReturn,
+            result.winRate,
+            result.maxDrawdown,
+            result.sharpeRatio,
+            result.avgTradeReturn,
+            result.profitFactor,
+            result.expectancy,
+            result.cagr,
+            result.volatility,
+            result.sortinoRatio,
+            result.calmarRatio,
+            result.avgHoldingPeriod,
+            result.avgWin,
+            result.avgLoss,
+            result.kellyCriterion,
+            result.ulcerIndex
+        ].forEach { XCTAssertTrue($0.isFinite) }
     }
 }

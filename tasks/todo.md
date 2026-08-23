@@ -1,5 +1,20 @@
 # Active Todo
 
+## 2026-08-23 Preset Correctness Follow-up
+
+- [completed] Make V3 consume supplied rules for named presets and align canonical crossover periods.
+- [completed] Apply next-market-open execution without final-candle force-closing to every standalone candle preset.
+- [completed] Correct Supertrend, VWAP, EchoChannelPivot, LadderCompressionRelease, and parameter-validation semantics.
+- [completed] Diversify bundled ticker return paths and replace tautological preset assertions with behavioral checks.
+- [completed] Run focused and full verification, review the complete diff, and update GitHub issue #7.
+
+### Review
+
+- V3 now loads supplied entry/exit rules for all named policies and falls back to bundled rules only when neither side is stored; SMA/EMA crossovers use canonical 50/150 periods.
+- Standalone candle strategies share next-market-open execution and preserve pending/open final-bar state without synthesizing a close.
+- Supertrend, session VWAP, Echo reclaim, Ladder compression, invalid periods, VolatilitySnap warmup, and dataset diversity have focused regression coverage.
+- Stable Xcode verification: 145 tests passed with 0 failures; production `swift build -c release` passed without warnings; `git diff --check` passed.
+
 ## 2026-08-21 Pending Exit Execution
 
 - [completed] Reproduce the final-bar pending-exit trade inconsistency.
@@ -128,3 +143,18 @@
 - Verification scan: no undocumented public `class`/`struct`/`enum`/`protocol`/`actor`/`typealias`/`func`/`init`/`subscript`/`var`/`let` declarations remain in `BacktestingKit/`.
 - Coverage now includes large model and facade/helper surfaces that were previously missing field-level Quick Help.
 - Verification: `swift test` passed with 111 tests and 0 failures after the full documentation sweep.
+
+## 2026-08-23 BKPresets Rule Corrections
+
+- [completed] Correct inverted Bollinger and moving-average crossover comparisons.
+- [completed] Correct Fast Stochastic operands and custom-strategy policy identity.
+- [completed] Make crossover policies require an actual two-bar crossing event.
+- [completed] Add focused preset and v2/v3 parity regression coverage.
+- [completed] Run targeted and full Swift tests, then update GitHub issue #7.
+
+### Review
+
+- Bollinger entries now require price at or below the lower band; Fast Stochastic compares `%K` with `%D`; custom presets retain `.customStrategy` identity.
+- SMA and EMA crossover presets now use bullish entry and bearish exit comparisons, with shared strategy execution requiring a two-bar false-to-true transition.
+- Verification: `swift test --filter BacktestingKitPresetRuleTests` passed 4 tests with 0 failures.
+- Verification: `swift test` passed 132 tests with 0 failures.
