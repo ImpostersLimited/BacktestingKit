@@ -134,7 +134,7 @@
 - [x] Make V3 prefer supplied rules for named policies while retaining legacy fallback behavior.
 - [x] Add focused regression coverage for preset definitions and named canonical-rule execution.
 - [x] Run targeted and full package tests.
-- [ ] Commit, publish, and verify the v0.2.3 tag; update GitHub issue #7.
+- [x] Commit, publish, and verify the v0.2.3 tag; update GitHub issue #7.
 
 ### Review
 
