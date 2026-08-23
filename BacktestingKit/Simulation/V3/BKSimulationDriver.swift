@@ -716,22 +716,21 @@ public final class BKSimulationDriver: BKV3SimulationDriving {
             var entryRules: [BKV3_SimulationRule] = []
             var exitRules: [BKV3_SimulationRule] = []
 
-            if policy == .customStrategy {
-                switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "entry"), instrumentID: ticker) {
-                case .success(let rules):
-                    entryRules = rules
-                case .failure(let error):
-                    return .failure(error)
-                }
-                if entryRules.isEmpty { continue }
-                switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "exit"), instrumentID: ticker) {
-                case .success(let rules):
-                    exitRules = rules
-                case .failure(let error):
-                    return .failure(error)
-                }
-                if exitRules.isEmpty { continue }
-            } else {
+            switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "entry"), instrumentID: ticker) {
+            case .success(let rules):
+                entryRules = rules
+            case .failure(let error):
+                return .failure(error)
+            }
+            switch mapDataStoreResult(await dataStore.getSimulationRules(configID: config.id, ruleType: "exit"), instrumentID: ticker) {
+            case .success(let rules):
+                exitRules = rules
+            case .failure(let error):
+                return .failure(error)
+            }
+
+            if entryRules.isEmpty || exitRules.isEmpty {
+                guard policy != .customStrategy else { continue }
                 let presetRules = v3GetPresetRules(preset: policy)
                 entryRules = presetRules.0.map { convertSimulationRule($0, type: "entry", configID: config.id, tickerID: ticker) }
                 exitRules = presetRules.1.map { convertSimulationRule($0, type: "exit", configID: config.id, tickerID: ticker) }
