@@ -7,6 +7,10 @@ https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Fixed
+- V3 simulations now honor supplied rules for named policies and only fall back to built-in rules when persisted rules are absent.
+- Corrected Bollinger, Fast Stochastic, SMA crossover, EMA crossover, and custom-policy preset definitions.
+
 ### Added
 - Additive portfolio orchestration APIs for app and engine integrators:
   - `BKEngine.PortfolioRequest`

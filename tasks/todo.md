@@ -128,3 +128,18 @@
 - Verification scan: no undocumented public `class`/`struct`/`enum`/`protocol`/`actor`/`typealias`/`func`/`init`/`subscript`/`var`/`let` declarations remain in `BacktestingKit/`.
 - Coverage now includes large model and facade/helper surfaces that were previously missing field-level Quick Help.
 - Verification: `swift test` passed with 111 tests and 0 failures after the full documentation sweep.
+## 2026-08-23 v0.2.3 Canonical Preset Correctness
+
+- [x] Correct active built-in preset directions, operands, periods, and custom identity.
+- [x] Make V3 prefer supplied rules for named policies while retaining legacy fallback behavior.
+- [x] Add focused regression coverage for preset definitions and named canonical-rule execution.
+- [x] Run targeted and full package tests.
+- [ ] Commit, publish, and verify the v0.2.3 tag; update GitHub issue #7.
+
+### Review
+
+- Named V3 policies now consume supplied canonical rules; legacy configurations without complete stored rules still use built-in presets.
+- Corrected the active Bollinger, Fast Stochastic, SMA crossover, EMA crossover, and custom-policy definitions.
+- Verification: `swift test --filter BacktestingKitPresetRuleTests` passed 2 tests with 0 failures.
+- Verification: `swift test` passed 130 tests with 0 failures.
+- Verification: `swift build -c release` completed successfully.
