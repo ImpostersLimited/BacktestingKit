@@ -158,3 +158,19 @@
 - SMA and EMA crossover presets now use bullish entry and bearish exit comparisons, with shared strategy execution requiring a two-bar false-to-true transition.
 - Verification: `swift test --filter BacktestingKitPresetRuleTests` passed 4 tests with 0 failures.
 - Verification: `swift test` passed 132 tests with 0 failures.
+
+## 2026-08-23 v0.2.3 Canonical Preset Correctness
+
+- [x] Correct active built-in preset directions, operands, periods, and custom identity.
+- [x] Make V3 prefer supplied rules for named policies while retaining legacy fallback behavior.
+- [x] Add focused regression coverage for preset definitions and named canonical-rule execution.
+- [x] Run targeted and full package tests.
+- [x] Commit, publish, and verify the v0.2.3 tag; update GitHub issue #7.
+
+### Review
+
+- Named V3 policies now consume supplied canonical rules; legacy configurations without complete stored rules still use built-in presets.
+- Corrected the active Bollinger, Fast Stochastic, SMA crossover, EMA crossover, and custom-policy definitions.
+- Verification: `swift test --filter BacktestingKitPresetRuleTests` passed 2 tests with 0 failures.
+- Verification: `swift test` passed 130 tests with 0 failures.
+- Verification: `swift build -c release` completed successfully.
