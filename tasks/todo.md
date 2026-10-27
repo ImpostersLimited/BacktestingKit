@@ -3,7 +3,7 @@
 ## 2026-10-27 Publish Maintenance Release v0.2.5
 
 - [x] Inspect the complete diff, real main checkout, and remote releases/tags; derive v0.2.5 from remote v0.2.4.
-- [ ] Record release notes, commit the reviewed maintenance changes, and push the feature branch.
+- [x] Record release notes, commit the reviewed maintenance changes, and push the feature branch.
 - [ ] Run the hosted debug/release matrix with stable Xcode and request Codex review; resolve any failures.
 - [ ] Fast-forward the clean main checkout, push main, and publish the annotated v0.2.5 tag/release.
 - [ ] Verify remote main/tag convergence, checkout cleanliness, and release metadata; remove temporary files.
@@ -13,6 +13,7 @@
 - Use the normal hosted macOS runner plus explicitly selected stable Xcode 27.1; run debug/release build/tests with complete concurrency checking and compiler warnings treated as errors.
 - The existing `issue-intake` workflow auto-assigns/issues Project placement. Track this publication in its pull request without creating or assigning an issue.
 - Only workflows, the changelog, and the active todo belong in this release; library API, minimum Swift version, and deployment targets stay unchanged.
+- PR #9 tracks publication. Codex review of 623ab99 completed with no findings. The automatic pull-request event did not create CI runs; add `workflow_dispatch` and dispatch the exact branch explicitly before merging.
 
 ## 2026-10-27 Routine Swift Maintenance
 

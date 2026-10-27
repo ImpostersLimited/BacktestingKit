@@ -37,6 +37,7 @@ https://keepachangelog.com/en/1.1.0/
 
 ### Changed
 - Add debug/release CI coverage on stable Xcode 27.1 alongside the default macOS runner, with complete concurrency checking and compiler warnings treated as errors.
+- Allow manual CI dispatch for verification before publication.
 - Update GitHub Actions dependencies to `actions/checkout@v7` and `actions/github-script@v9`.
 - Preserve the Swift 5.9 tools minimum, iOS 16/macOS 13 deployment targets, and existing public API.
 
