@@ -1,5 +1,48 @@
 # Active Todo
 
+## 2026-10-27 Publish Maintenance Release v0.2.5
+
+- [x] Inspect the complete diff, real main checkout, and remote releases/tags; derive v0.2.5 from remote v0.2.4.
+- [ ] Record release notes, commit the reviewed maintenance changes, and push the feature branch.
+- [ ] Run the hosted debug/release matrix with stable Xcode and request Codex review; resolve any failures.
+- [ ] Fast-forward the clean main checkout, push main, and publish the annotated v0.2.5 tag/release.
+- [ ] Verify remote main/tag convergence, checkout cleanliness, and release metadata; remove temporary files.
+
+### Verification Plan
+
+- Use the normal hosted macOS runner plus explicitly selected stable Xcode 27.1; run debug/release build/tests with complete concurrency checking and compiler warnings treated as errors.
+- The existing `issue-intake` workflow auto-assigns/issues Project placement. Track this publication in its pull request without creating or assigning an issue.
+- Only workflows, the changelog, and the active todo belong in this release; library API, minimum Swift version, and deployment targets stay unchanged.
+
+## 2026-10-27 Routine Swift Maintenance
+
+- [x] Compare package configuration, installed stable tools, and current official Swift/API release guidance.
+- [x] Verify current Swift compilation with strict Swift 6 diagnostics and compiler warnings treated as errors.
+- [x] Apply only confirmed maintenance fixes, preserving Swift 5.9 and deployment compatibility.
+- [x] Verify workflow syntax/matrix and the final diff; document findings and limitations.
+- [ ] Run the full debug/release test suite with stable Xcode 27.1 (blocked locally: only Xcode 27.2 RC is installed and Command Line Tools lacks `xctest`).
+
+### Scope
+
+- Remote main matches this checkout at ac2ceb4. Apple identifies installed Xcode 27.2 (27B48) as an RC; its initial test run was stopped and is not a stable verification result.
+- Stable Xcode 27.1 (27A9275) is not installed locally. Command Line Tools provides released Swift 6.4 (swiftlang-6.4.0.34.1) and the macOS 26.5 SDK for package compilation checks.
+- No third-party Swift package dependencies. Evaluate new Swift features against actual call sites before changing the minimum toolchain or API.
+- Baseline CI ran debug tests even in its release job and did not enforce complete concurrency checking.
+- Preserve normal macOS-runner compatibility checks and add explicit stable Xcode 27.1 checks on GitHub's `xcode-27` runner; update checkout/github-script actions after reviewing their breaking changes.
+- Swift 6.4's new Swift Build backend warns when `-Xswiftc -swift-version` overrides manifest language settings. CI will use complete concurrency checking in the declared language mode instead of introducing that warning or raising the minimum toolchain.
+- GitHub connector needs reauthentication. The active issue-intake workflow also auto-assigns/adds new issues to a Project, contrary to the current tracking policy; no issue was created.
+
+### Review
+
+- Reviewed Swift 6.4 release/API guidance and current Swift/Foundation call sites. No required library API migration or third-party Swift dependency update was identified. Keep tools-version 5.9, iOS 16, and macOS 13 compatibility; new collection, observation, and async-cleanup features do not justify changing that baseline.
+- CI now builds/tests debug and release on the normal runner and stable Xcode 27.1, with complete concurrency checking and compiler warnings treated as errors. Release jobs now actually run release tests; optional JS parity runs only once.
+- Updated `actions/checkout` v4 -> v7 and `actions/github-script` v7 -> v9. Existing scripts use neither the removed CommonJS import nor conflicting `getOctokit` declarations; their behavior is unchanged.
+- Command Line Tools Swift 6.4 with macOS 26.5 SDK: `swift build -c release --sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors` passed. Library/compiler diagnostics were clean; Swift Build emitted language-override, missing CLT linker search-path, and existing `.build/release` symlink warnings. These tool/layout warnings are not a warning-free Xcode result.
+- The freshly built release demo executable exited 0; it discards the simulation result, so this is an executable smoke check, not test-suite evidence.
+- Both YAML files parsed, all three issue-intake scripts parsed under the v9 script parameters, and structural assertions verified all four matrix entries and matching build/test configurations. `git diff --check` passed.
+- Full stable-Xcode tests, native iOS builds, and hosted workflow execution remain unverified. The RC test attempt was interrupted and is not counted as a pass. No commit, push, tag, issue assignment, or Project placement was performed.
+- Sources: https://www.swift.org/blog/swift-6.4-released/ ; https://developer.apple.com/news/releases/?id=10152026a ; https://developer.apple.com/news/releases/?id=10192026g ; https://github.com/actions/checkout/releases ; https://github.com/actions/github-script/releases/tag/v9.0.0 ; https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md .
+
 ## 2026-08-23 Preset Correctness Follow-up
 
 - [completed] Make V3 consume supplied rules for named presets and align canonical crossover periods.

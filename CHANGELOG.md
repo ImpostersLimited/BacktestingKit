@@ -30,6 +30,16 @@ https://keepachangelog.com/en/1.1.0/
 - Onboarding/tutorial examples were updated to use current `BKRunSummary` metric access (`summary.metrics.*`) instead of stale `summary.result.*` examples.
 - Compatibility aliases remain non-deprecated for the `v0.1.x` release cycle while canonical docs and examples route new integrations toward the preferred names.
 
+## [0.2.5] - 2026-10-27
+
+### Fixed
+- CI release jobs now run tests in the release configuration.
+
+### Changed
+- Add debug/release CI coverage on stable Xcode 27.1 alongside the default macOS runner, with complete concurrency checking and compiler warnings treated as errors.
+- Update GitHub Actions dependencies to `actions/checkout@v7` and `actions/github-script@v9`.
+- Preserve the Swift 5.9 tools minimum, iOS 16/macOS 13 deployment targets, and existing public API.
+
 ## [0.1.0] - 2026-02-19
 
 ### Added

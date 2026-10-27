@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Collect target issues
         id: collect
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ github.token }}
           script: |
@@ -50,7 +50,7 @@ jobs:
 
       - name: Assign issues to andywkff
         if: ${{ steps.collect.outputs.count != '0' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           TARGET_ISSUES: ${{ steps.collect.outputs.issues }}
         with:
@@ -69,7 +69,7 @@ jobs:
 
       - name: Add issues to ImpostersLimited Main project
         if: ${{ env.PROJECT_TOKEN != '' && steps.collect.outputs.count != '0' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           TARGET_ISSUES: ${{ steps.collect.outputs.issues }}
         with:
