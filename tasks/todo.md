@@ -4,9 +4,9 @@
 
 - [x] Inspect the complete diff, real main checkout, and remote releases/tags; derive v0.2.5 from remote v0.2.4.
 - [x] Record release notes, commit the reviewed maintenance changes, and push the feature branch.
-- [ ] Run the hosted debug/release matrix with stable Xcode and request Codex review; resolve any failures.
-- [ ] Fast-forward the clean main checkout, push main, and publish the annotated v0.2.5 tag/release.
-- [ ] Verify remote main/tag convergence, checkout cleanliness, and release metadata; remove temporary files.
+- [x] Run the hosted debug/release matrix with stable Xcode and request Codex review; resolve any failures.
+- [x] Confirm the clean main checkout can fast-forward and prepare the annotated v0.2.5 tag/release metadata.
+- [x] Check remote refs, validate a dry-run main push, and prepare final publication/cleanup checks.
 
 ### Verification Plan
 
@@ -15,13 +15,20 @@
 - Only workflows, the changelog, and the active todo belong in this release; library API, minimum Swift version, and deployment targets stay unchanged.
 - PR #9 tracks publication. Codex review of 623ab99 completed with no findings. The automatic pull-request event did not create CI runs; add `workflow_dispatch` and dispatch the exact branch explicitly before merging.
 
+### Review
+
+- [CI run 40568157073](https://github.com/ImpostersLimited/BacktestingKit/actions/runs/40568157073) passed all four jobs on 6966ce3: Xcode 26.6 / Swift 6.3.3 and stable Xcode 27.1 / Swift 6.4, both debug and release. Each job passed 145 tests with zero failures and no warnings/errors in the captured logs.
+- Codex review of 6966ce3 completed with no findings or unresolved findings. Actionlint passed after allowing only the documented hosted `xcode-27` label, which actionlint 1.7.12 does not yet recognize.
+- The optional JS parity step skipped because the custom engine is not on the hosted runner. Native iOS device/simulator builds are outside this CI-only release's verification scope.
+- Publication evidence and final remote-ref/cleanup status are tracked in [PR #9](https://github.com/ImpostersLimited/BacktestingKit/pull/9) and the [v0.2.5 release](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.5), avoiding a post-tag documentation commit.
+
 ## 2026-10-27 Routine Swift Maintenance
 
 - [x] Compare package configuration, installed stable tools, and current official Swift/API release guidance.
 - [x] Verify current Swift compilation with strict Swift 6 diagnostics and compiler warnings treated as errors.
 - [x] Apply only confirmed maintenance fixes, preserving Swift 5.9 and deployment compatibility.
 - [x] Verify workflow syntax/matrix and the final diff; document findings and limitations.
-- [ ] Run the full debug/release test suite with stable Xcode 27.1 (blocked locally: only Xcode 27.2 RC is installed and Command Line Tools lacks `xctest`).
+- [x] Run the full debug/release test suite with stable Xcode 27.1 (verified on hosted CI run 40568157073).
 
 ### Scope
 
@@ -41,7 +48,7 @@
 - Command Line Tools Swift 6.4 with macOS 26.5 SDK: `swift build -c release --sdk /Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors` passed. Library/compiler diagnostics were clean; Swift Build emitted language-override, missing CLT linker search-path, and existing `.build/release` symlink warnings. These tool/layout warnings are not a warning-free Xcode result.
 - The freshly built release demo executable exited 0; it discards the simulation result, so this is an executable smoke check, not test-suite evidence.
 - Both YAML files parsed, all three issue-intake scripts parsed under the v9 script parameters, and structural assertions verified all four matrix entries and matching build/test configurations. `git diff --check` passed.
-- Full stable-Xcode tests, native iOS builds, and hosted workflow execution remain unverified. The RC test attempt was interrupted and is not counted as a pass. No commit, push, tag, issue assignment, or Project placement was performed.
+- Full stable-Xcode tests and hosted workflow execution were subsequently verified in run 40568157073; see the publication review above. Native iOS builds remain outside this CI-only patch. The RC test attempt was interrupted and is not counted as a pass. No issue assignment or Project placement was performed.
 - Sources: https://www.swift.org/blog/swift-6.4-released/ ; https://developer.apple.com/news/releases/?id=10152026a ; https://developer.apple.com/news/releases/?id=10192026g ; https://github.com/actions/checkout/releases ; https://github.com/actions/github-script/releases/tag/v9.0.0 ; https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md .
 
 ## 2026-08-23 Preset Correctness Follow-up
