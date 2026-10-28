@@ -1,5 +1,25 @@
 # Active Todo
 
+## 2026-10-28 Backfill GitHub Releases
+
+- [x] Verify missing releases, existing remote tag targets, and the current latest release.
+- [x] Review each tagged commit range and prepare version-specific historical notes.
+- [x] Publish v0.2.0 through v0.2.4 from their existing tags with latest explicitly disabled.
+- [x] Confirm all seven releases are published, v0.2.5 is still latest, and no tags moved; clean up temporary notes.
+
+### Scope
+
+- GitHub release metadata only; do not create/move tags or change library code, main, or v0.2.5 release notes.
+- The release records provide shared tracking; no issue is created because existing issue-intake automation would assign/add it to a Project.
+- The active todo is updated locally; no additional Git commit or push is required for this metadata backfill.
+
+### Review
+
+- Published retrospective release notes for [v0.2.0](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.0), [v0.2.1](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.1), [v0.2.2](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.2), [v0.2.3](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.3), and [v0.2.4](https://github.com/ImpostersLimited/BacktestingKit/releases/tag/v0.2.4), using `--verify-tag --latest=false` for each.
+- Verified all seven release records are published non-prereleases. Both the release list's latest flag and GitHub's latest-release endpoint still identify v0.2.5.
+- Compared the complete remote tag listing before/after publication: every tag object and peeled commit is unchanged. Main, library code, and v0.2.5 release notes were not changed.
+- Temporary notes were removed after publication. No builds/tests were rerun for this metadata-only task; the only local change is this task record.
+
 ## 2026-10-27 Publish Maintenance Release v0.2.5
 
 - [x] Inspect the complete diff, real main checkout, and remote releases/tags; derive v0.2.5 from remote v0.2.4.
